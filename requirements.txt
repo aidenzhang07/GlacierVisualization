@@ -1,2 +1,6 @@
 flask>=3.0.0
 gunicorn
+rasterio
+numpy
+pillow
+scikit-image

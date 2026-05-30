@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ glacier_name }} · Glacier Details</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ice:     #d6eef8;
+      --deep:    #0a2a3a;
+      --glacier: #2e8cb5;
+      --melt:    #e06c4a;
+      --text:    #cde8f5;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--deep);
+      background-image:
+        radial-gradient(ellipse at 20% 10%, rgba(46,140,181,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 90%, rgba(10,42,58,0.9) 0%, transparent 60%);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 60px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 960px;
+      margin-bottom: 36px;
+      animation: fadeDown 0.8s ease both;
+    }
+
+    .breadcrumb {
+      margin-bottom: 10px;
+      color: #7aafc5;
+      font-size: 0.82rem;
+    }
+
+    .breadcrumb a {
+      color: #a8d8ea;
+      text-decoration: none;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 700;
+      color: var(--ice);
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      font-size: 0.78rem;
+      color: #7aafc5;
+      letter-spacing: 0.05em;
+      max-width: 760px;
+    }
+
+    .detail-grid {
+      width: 100%;
+      max-width: 960px;
+      display: grid;
+      gap: 24px;
+      margin-bottom: 32px;
+      animation: fadeUp 0.8s 0.2s ease both;
+    }
+
+    .detail-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(168,216,234,0.12);
+      border-radius: 20px;
+      padding: 30px;
+    }
+
+    .detail-card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: var(--ice);
+      margin-bottom: 16px;
+    }
+
+    .detail-card p {
+      color: #bfdcea;
+      line-height: 1.7;
+      font-size: 0.95rem;
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-top: 22px;
+    }
+
+    .summary-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(168,216,234,0.12);
+      border-radius: 16px;
+      padding: 18px 20px;
+      font-size: 0.9rem;
+      color: #cde8f5;
+    }
+
+    .summary-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--glacier);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .chart-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(168,216,234,0.12);
+      border-radius: 20px;
+      padding: 28px 32px;
+    }
+
+    canvas { width: 100% !important; }
+
+    .table-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(168,216,234,0.12);
+      border-radius: 20px;
+      padding: 28px 32px;
+    }
+
+    .table-card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      color: var(--ice);
+      margin-bottom: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(168,216,234,0.2);
+      color: var(--glacier);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(168,216,234,0.06);
+      color: var(--text);
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tr:hover td { background: rgba(255,255,255,0.03); }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 16px;
+      color: #a8d8ea;
+      text-decoration: none;
+      border: 1px solid rgba(168,216,234,0.15);
+      border-radius: 999px;
+      padding: 10px 16px;
+      transition: background 0.2s ease;
+    }
+
+    .back-link:hover { background: rgba(46,140,181,0.16); }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.65rem;
+      color: #3d6a80;
+      letter-spacing: 0.1em;
+      text-align: center;
+      width: 100%;
+      max-width: 960px;
+      animation: fadeUp 0.8s 0.5s ease both;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="breadcrumb"><a href="/">← Back to glacier map</a></div>
+  <h1>{{ glacier_name }}</h1>
+  <p class="subtitle">Interactive detail page for a glacier selected from the world map.</p>
+</header>
+
+<div class="detail-grid">
+  <div class="detail-card">
+    <h2>{{ glacier_name }} Overview</h2>
+    <p>{{ glacier_info.description }}</p>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <strong>Country</strong>
+        {{ glacier_info.country }}
+      </div>
+      <div class="summary-card">
+        <strong>Latitude</strong>
+        {{ glacier_info.latitude }}°
+      </div>
+      <div class="summary-card">
+        <strong>Longitude</strong>
+        {{ glacier_info.longitude }}°
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h2>{{ glacier_name }} thickness over time</h2>
+    <canvas id="glacierChart"></canvas>
+  </div>
+</div>
+
+<div class="table-card">
+  <h2>Historical thickness data</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>Thickness (m)</th>
+        <th>Change</th>
+      </tr>
+    </thead>
+    <tbody id="detailTable"></tbody>
+  </table>
+</div>
+
+<footer>
+  <p>Flask + SQLite + Chart.js &bull; Glacier Tracker detail view</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const glacierName = {{ glacier_name|tojson }};
+  const glacierInfo = {{ glacier_info|tojson }};
+
+  async function loadGlacierData() {
+    const res = await fetch(`/api/glaciers/${encodeURIComponent(glacierName)}`);
+    const data = await res.json();
+
+    const sorted = data.sort((a, b) => a.year - b.year);
+    const years = sorted.map(row => row.year);
+    const thickness = sorted.map(row => row.thickness_meters);
+
+    const ctx = document.getElementById('glacierChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: years,
+        datasets: [{
+          label: glacierName,
+          data: thickness,
+          borderColor: '#4fb3d9',
+          backgroundColor: 'rgba(79,179,217,0.16)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 5,
+          borderWidth: 2.5,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(10,42,58,0.95)',
+            borderColor: 'rgba(168,216,234,0.2)',
+            borderWidth: 1,
+            titleColor: '#d6eef8',
+            bodyColor: '#a8d8ea',
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} m`
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#7aafc5', font: { family: 'DM Mono', size: 11 } },
+            grid: { color: 'rgba(168,216,234,0.06)' }
+          },
+          y: {
+            ticks: {
+              color: '#7aafc5',
+              font: { family: 'DM Mono', size: 11 },
+              callback: v => v + ' m'
+            },
+            grid: { color: 'rgba(168,216,234,0.06)' }
+          }
+        }
+      }
+    });
+
+    const tbody = document.getElementById('detailTable');
+    sorted.forEach((row, index) => {
+      const prev = sorted[index - 1];
+      const diff = prev ? (row.thickness_meters - prev.thickness_meters).toFixed(1) : '—';
+      const diffStr = diff === '—' ? '—' : (diff > 0 ? `+${diff} m` : `${diff} m`);
+      const diffColor = diff < 0 ? 'color:#e06c4a' : diff === '—' ? '' : 'color:#57cc99';
+      tbody.innerHTML += `
+        <tr>
+          <td>${row.year}</td>
+          <td>${row.thickness_meters} m</td>
+          <td style="${diffColor}">${diffStr}</td>
+        </tr>`;
+    });
+  }
+
+  loadGlacierData();
+</script>
+</body>
+</html>

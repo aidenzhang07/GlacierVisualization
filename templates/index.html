@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Glacier Thickness Tracker</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Glacier Map Explorer</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
   <style>
@@ -35,7 +35,7 @@
 
     header {
       text-align: center;
-      margin-bottom: 48px;
+      margin-bottom: 36px;
       animation: fadeDown 0.8s ease both;
     }
 
@@ -64,49 +64,11 @@
       letter-spacing: 0.05em;
     }
 
-    /* Stat cards */
-    .stats {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 40px;
-      animation: fadeUp 0.8s 0.2s ease both;
-    }
-
-    .stat-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(168,216,234,0.15);
-      border-radius: 12px;
-      padding: 18px 28px;
-      text-align: center;
-      backdrop-filter: blur(6px);
-    }
-
-    .stat-value {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      color: var(--ice);
-    }
-
-    .stat-value.danger { color: var(--melt); }
-
-    .stat-label {
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #7aafc5;
-      margin-top: 4px;
-    }
-
-    /* Chart card */
     .chart-card {
       width: 100%;
-      max-width: 860px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(168,216,234,0.12);
-      border-radius: 20px;
-      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       animation: fadeUp 0.8s 0.4s ease both;
     }
 
@@ -145,71 +107,78 @@
       border-radius: 50%;
     }
 
-    canvas { width: 100% !important; }
+    #map {
+      width: 90vw;
+      min-height: 75vh;
+      border-radius: 16px;
+      border: 1px solid rgba(168,216,234,0.16);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+    }
 
-    /* Data table */
-    .table-card {
+    .glacier-list {
       width: 100%;
-      max-width: 860px;
-      margin-top: 32px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(168,216,234,0.12);
-      border-radius: 20px;
-      padding: 28px 32px;
+      max-width: 960px;
+      display: grid;
+      gap: 18px;
+      margin-top: 24px;
       animation: fadeUp 0.8s 0.6s ease both;
     }
 
-    .table-card h2 {
-      font-family: 'Playfair Display', serif;
+    .glacier-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(168,216,234,0.12);
+      border-radius: 16px;
+      padding: 22px 26px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+
+    .glacier-card h3 {
+      margin-bottom: 6px;
       font-size: 1rem;
       color: var(--ice);
-      margin-bottom: 16px;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.75rem;
+    .glacier-card p {
+      color: #bfdcea;
+      line-height: 1.6;
+      font-size: 0.92rem;
     }
 
-    th {
-      text-align: left;
-      padding: 8px 12px;
-      border-bottom: 1px solid rgba(168,216,234,0.2);
-      color: var(--glacier);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      font-size: 0.65rem;
+    .glacier-card a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      background: rgba(46,140,181,0.12);
+      border: 1px solid rgba(46,140,181,0.22);
+      border-radius: 999px;
+      color: #d6eef8;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: background 0.2s ease;
     }
 
-    td {
-      padding: 9px 12px;
-      border-bottom: 1px solid rgba(168,216,234,0.06);
-      color: var(--text);
+    .glacier-card a:hover {
+      background: rgba(46,140,181,0.2);
     }
 
-    tr:last-child td { border-bottom: none; }
-
-    tr:hover td { background: rgba(255,255,255,0.03); }
-
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 20px;
-      font-size: 0.65rem;
+    .leaflet-popup-content-wrapper {
+      background: rgba(10,42,58,0.95);
+      color: #d6eef8;
+      border-radius: 14px;
+      border: 1px solid rgba(46,140,181,0.2);
     }
 
-    .badge-blue  { background: rgba(46,140,181,0.2); color: #7dd3f0; }
-    .badge-teal  { background: rgba(56,178,172,0.2); color: #81e6d9; }
-    .badge-green { background: rgba(72,187,120,0.2); color: #9ae6b4; }
+    .leaflet-popup-content a {
+      color: #a8d8ea;
+      text-decoration: underline;
+    }
 
-    footer {
-      margin-top: 48px;
-      font-size: 0.65rem;
-      color: #3d6a80;
-      letter-spacing: 0.1em;
-      text-align: center;
-      animation: fadeUp 0.8s 0.8s ease both;
+    .leaflet-control-attribution {
+      color: rgba(255,255,255,0.7) !important;
     }
 
     @keyframes fadeDown {
@@ -221,167 +190,261 @@
       from { opacity: 0; transform: translateY(20px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    /* ── Modal overlay styles ── */
+    #modalOverlay {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(5, 15, 25, 0.92); backdrop-filter: blur(6px);
+      justify-content: center; align-items: center;
+    }
+    #modalOverlay.active { display: flex; }
+    #modalOverlay .modal-panel {
+      background: var(--deep); border: 1px solid rgba(168,216,234,0.2);
+      border-radius: 20px; width: 95vw; max-width: 960px; height: 85vh;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 0 60px rgba(46,140,181,0.15);
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 24px; border-bottom: 1px solid rgba(168,216,234,0.12);
+    }
+    .modal-header h2 {
+      font-family: 'Playfair Display', serif; color: var(--ice); font-size: 1.2rem;
+    }
+    .modal-close {
+      background: none; border: 1px solid rgba(255,255,255,0.2); color: var(--text);
+      font-size: 1.4rem; width: 36px; height: 36px; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .modal-close:hover { background: rgba(255,255,255,0.1); }
+    .modal-body { flex: 1; position: relative; background: #0a1a28; }
+    .modal-controls {
+      display: flex; align-items: center; gap: 12px; padding: 12px 24px;
+      border-top: 1px solid rgba(168,216,234,0.12); flex-wrap: wrap;
+    }
+    .modal-controls label { font-size: 0.78rem; color: #7aafc5; display: flex; align-items: center; gap: 6px; }
+    .modal-controls input[type=range] { width: 160px; accent-color: #4fc3f7; }
+    .modal-controls button {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+      color: #d6eef8; padding: 6px 12px; border-radius: 6px;
+      cursor: pointer; font-size: 0.78rem; transition: background 0.2s;
+    }
+    .modal-controls button:hover { background: rgba(255,255,255,0.18); }
+    .modal-spinner {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px; z-index: 20;
+      background: rgba(10,26,40,0.85);
+    }
+    .modal-spinner .spinner-ring {
+      width: 48px; height: 48px; border: 4px solid rgba(168,216,234,0.15);
+      border-top-color: #4fc3f7; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .modal-spinner .spinner-text { color: #a8d8ea; font-size: 0.85rem; }
+    .modal-spinner .spinner-sub { color: #5a8ca0; font-size: 0.7rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .glacier-card .btn-3d {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 12px 18px; background: rgba(46,140,181,0.12);
+      border: 1px solid rgba(46,140,181,0.22); border-radius: 999px;
+      color: #d6eef8; text-decoration: none; font-size: 0.85rem;
+      cursor: pointer; transition: background 0.2s ease;
+    }
+    .glacier-card .btn-3d:hover { background: rgba(46,140,181,0.22); }
   </style>
 </head>
 <body>
 
 <header>
   <p class="eyebrow">Climate Data Visualization</p>
-  <h1>Glacier <span>Thickness</span><br>Over Time</h1>
-  <p class="subtitle">Data sourced from SQLite database &bull; Rendered with Chart.js</p>
+  <h1>Glacier <span>World Map</span> Interactive Explorer</h1>
 </header>
 
-<div class="stats" id="stats">
-  <!-- Filled by JS -->
-</div>
-
 <div class="chart-card">
-  <div class="chart-header">
-    <span class="chart-title">Thickness in Meters (1950 – 2023)</span>
+  <!-- <div class="chart-header">
+    <span class="chart-title">Glacier map with clickable mountain markers</span>
     <div class="legend" id="legend"></div>
+  </div> -->
+  <div id="map"></div>
+</div>
+
+<div class="glacier-list" id="glacierList"></div>
+
+<!-- ── 3D Viewer Modal ── -->
+<div id="modalOverlay">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2 id="modalTitle">3D Satellite View</h2>
+      <button class="modal-close" id="modalClose">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <div class="modal-spinner" id="modalSpinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-text">Downloading satellite imagery…</div>
+        <div class="spinner-sub" id="spinnerSub"></div>
+      </div>
+      <iframe id="modalIframe" src="" style="width:100%;height:100%;border:none;display:none" allow="fullscreen"></iframe>
+    </div>
   </div>
-  <canvas id="glacierChart"></canvas>
 </div>
 
-<div class="table-card">
-  <h2>Raw Database Records</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Year</th>
-        <th>Glacier</th>
-        <th>Thickness (m)</th>
-        <th>Change</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-</div>
-
-<footer>
-  <p>Flask + SQLite + Chart.js &nbsp;&bull;&nbsp; Glacier Tracker v1.0</p>
-</footer>
-
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-  const COLORS = {
-    "Athabasca":    { line: "#4fb3d9", fill: "rgba(79,179,217,0.12)" },
-    "Rhône":        { line: "#f4a261", fill: "rgba(244,162,97,0.12)"  },
-    "Perito Moreno":{ line: "#57cc99", fill: "rgba(87,204,153,0.12)"  },
-  };
+// ── 3D Modal (opens the geotiff_viewer in an iframe) ──
+async function open3DModal(glacierName) {
+  const overlay = document.getElementById('modalOverlay');
+  const spinner = document.getElementById('modalSpinner');
+  const sub = document.getElementById('spinnerSub');
+  const iframe = document.getElementById('modalIframe');
+  const title = document.getElementById('modalTitle');
 
-  const BADGE_CLASS = {
-    "Athabasca":    "badge-blue",
-    "Rhône":        "badge-teal",
-    "Perito Moreno":"badge-green",
-  };
+  title.textContent = glacierName + ' — 3D Satellite View';
+  overlay.classList.add('active');
+  spinner.style.display = 'flex';
+  iframe.style.display = 'none';
+  sub.textContent = '';
+
+  // Trigger download if needed, then load iframe
+  try {
+    let res = await fetch('/api/glacier-image/years/' + encodeURIComponent(glacierName));
+    let info = await res.json();
+    if (!info.complete) {
+      sub.textContent = 'Fetching from satellite (this may take a minute)…';
+      await fetch('/api/glacier-image/download/' + encodeURIComponent(glacierName), { method: 'POST' });
+      for (let i = 0; i < 120; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        let sr = await fetch('/api/glacier-image/status/' + encodeURIComponent(glacierName));
+        let st = await sr.json();
+        sub.textContent = (st.years_ready || []).length + ' years downloaded…';
+        if (st.complete) break;
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+
+  // Hide spinner, show iframe with the working geotiff_viewer page
+  spinner.style.display = 'none';
+  iframe.src = '/geotiff-viewer?glacier=' + encodeURIComponent(glacierName);
+  iframe.style.display = 'block';
+}
+
+function close3DModal() {
+  const overlay = document.getElementById('modalOverlay');
+  const iframe = document.getElementById('modalIframe');
+  overlay.classList.remove('active');
+  iframe.src = '';
+  iframe.style.display = 'none';
+}
+
+document.getElementById('modalClose').addEventListener('click', close3DModal);
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) close3DModal();
+});
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') close3DModal(); });
+
+// ── Glacier marker data ──
+const glacierMarkers = {{ glacier_markers | tojson }};
+
+  function createMap() {
+    const map = L.map('map', { preferCanvas: true, zoomControl: true }).setView([15, 0], 3);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '&copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+      maxZoom: 18,
+      noWrap: true,
+    }).addTo(map);
+
+    // Overlay glacier polygons from GeoJSON
+    fetch('/static/named.geojson')
+      .then(res => res.json())
+      .then(geojson => {
+        L.geoJSON(geojson, {
+          smoothFactor: 10,
+          style: function(feature) {
+            if (feature.properties && feature.properties.glac_name !== "None") {
+              return {
+                color: '#FF6900', // dark blue
+                weight: 1.5,
+                fillOpacity: 0.35
+              };
+            } else {
+              return {
+                color: '#FF6900', // original blue
+                weight: 1,
+                fillOpacity: 0.22
+              };
+            }
+          },
+          onEachFeature: function (feature, layer) {
+            let popupContent = '';
+            const name = feature.properties?.name || '';
+            if (feature.properties) {
+              if (name) {
+                popupContent = '<strong>Glacier: ' + name + '</strong>';
+              } else {
+                popupContent = '<strong>Glacier polygon</strong>';
+              }
+              popupContent += '<ul style="margin:8px 0 0 0;padding-left:18px;font-size:0.95em">';
+              for (const [key, value] of Object.entries(feature.properties)) {
+                popupContent += `<li><b>${key}:</b> ${value}</li>`;
+              }
+              popupContent += '</ul>';
+            } else {
+              popupContent = 'Glacier polygon';
+            }
+            // Add 3D View button if name matches a known glacier
+            if (name && glacierMarkers[name]) {
+              popupContent += `<br><a href="#" onclick="open3DModal('${name.replace(/'/g, "\\'")}');return false" style="color:#4fc3f7;font-weight:bold;text-decoration:underline;">🏔 Open 3D View</a>`;
+            }
+            layer.bindPopup(popupContent);
+          }
+        }).addTo(map);
+      });
+
+    Object.entries(glacierMarkers).forEach(([name, glacier]) => {
+      const marker = L.marker([glacier.latitude, glacier.longitude]).addTo(map);
+      marker.bindPopup(`
+        <strong>${name}</strong><br>
+        ${glacier.country}<br>
+        <a href="/glacier/${encodeURIComponent(name)}">View details</a><br>
+        <a href="#" onclick="open3DModal('${name.replace(/'/g, "\\'")}');return false" style="color:#4fc3f7;">🏔 Open 3D View</a>
+      `);
+      marker.on('click', () => marker.openPopup());
+    });
+  }
 
   async function loadData() {
-    const res = await fetch("/api/glaciers");
+    const res = await fetch('/api/glaciers');
     const data = await res.json();
 
-    // Group by glacier name
     const grouped = {};
     data.forEach(row => {
       if (!grouped[row.glacier_name]) grouped[row.glacier_name] = [];
       grouped[row.glacier_name].push(row);
     });
 
-    // Build chart datasets
-    const allYears = [...new Set(data.map(r => r.year))].sort();
-    const datasets = Object.entries(grouped).map(([name, rows]) => {
-      const yearMap = Object.fromEntries(rows.map(r => [r.year, r.thickness_meters]));
-      return {
-        label: name,
-        data: allYears.map(y => yearMap[y] ?? null),
-        borderColor: COLORS[name]?.line ?? "#ccc",
-        backgroundColor: COLORS[name]?.fill ?? "transparent",
-        fill: true,
-        tension: 0.4,
-        pointRadius: 5,
-        pointHoverRadius: 8,
-        borderWidth: 2.5,
-      };
-    });
-
-    // Render chart
-    const ctx = document.getElementById("glacierChart").getContext("2d");
-    new Chart(ctx, {
-      type: "line",
-      data: { labels: allYears, datasets },
-      options: {
-        responsive: true,
-        interaction: { mode: "index", intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: "rgba(10,42,58,0.95)",
-            borderColor: "rgba(168,216,234,0.2)",
-            borderWidth: 1,
-            titleColor: "#d6eef8",
-            bodyColor: "#a8d8ea",
-            padding: 14,
-            callbacks: {
-              label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} m`
-            }
-          }
-        },
-        scales: {
-          x: {
-            ticks: { color: "#7aafc5", font: { family: "DM Mono", size: 11 } },
-            grid:  { color: "rgba(168,216,234,0.06)" }
-          },
-          y: {
-            ticks: {
-              color: "#7aafc5",
-              font: { family: "DM Mono", size: 11 },
-              callback: v => v + " m"
-            },
-            grid: { color: "rgba(168,216,234,0.06)" }
-          }
-        }
-      }
-    });
-
-    // Legend
-    const legendEl = document.getElementById("legend");
-    Object.entries(COLORS).forEach(([name, c]) => {
-      legendEl.innerHTML += `
-        <span class="legend-item">
-          <span class="legend-dot" style="background:${c.line}"></span>${name}
-        </span>`;
-    });
-
-    // Stat cards
-    const statsEl = document.getElementById("stats");
-    Object.entries(grouped).forEach(([name, rows]) => {
-      const sorted = rows.sort((a,b) => a.year - b.year);
-      const first = sorted[0].thickness_meters;
-      const last  = sorted[sorted.length - 1].thickness_meters;
-      const loss  = ((first - last) / first * 100).toFixed(1);
-      statsEl.innerHTML += `
-        <div class="stat-card">
-          <div class="stat-value danger">-${loss}%</div>
-          <div class="stat-label">${name}<br>thickness lost</div>
+    const listEl = document.getElementById('glacierList');
+    Object.entries(glacierMarkers).forEach(([name, glacier]) => {
+      const latest = grouped[name]?.slice().sort((a, b) => b.year - a.year)[0];
+      const latestThickness = latest ? `${latest.thickness_meters} m` : 'N/A';
+      listEl.innerHTML += `
+        <div class="glacier-card">
+          <div>
+            <h3>${name} — ${glacier.country}</h3>
+            <p>${glacier.description}</p>
+            <p><strong>Latest thickness:</strong> ${latestThickness}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <a href="/glacier/${encodeURIComponent(name)}">See details</a>
+            <span class="btn-3d" onclick="open3DModal('${name.replace(/'/g, "\\'")}')">🏔 3D View</span>
+          </div>
         </div>`;
-    });
-
-    // Table
-    const tbody = document.getElementById("tableBody");
-    data.forEach((row, i) => {
-      const prev = data.slice(0, i).reverse().find(r => r.glacier_name === row.glacier_name);
-      const diff = prev ? (row.thickness_meters - prev.thickness_meters).toFixed(1) : "—";
-      const diffStr = diff === "—" ? "—" : (diff > 0 ? `+${diff} m` : `${diff} m`);
-      const diffColor = diff < 0 ? "color:#e06c4a" : diff === "—" ? "" : "color:#57cc99";
-      tbody.innerHTML += `
-        <tr>
-          <td>${row.year}</td>
-          <td><span class="badge ${BADGE_CLASS[row.glacier_name] ?? ''}">${row.glacier_name}</span></td>
-          <td>${row.thickness_meters} m</td>
-          <td style="${diffColor}">${diffStr}</td>
-        </tr>`;
     });
   }
 
+  createMap();
   loadData();
 </script>
 </body>
