@@ -63,7 +63,7 @@ HEMI_DIRS = {"north": args.north, "south": args.south}
 
 # Whitelist: ONLY these columns kept in polygon outputs
 # (geometry is always kept separately)
-KEEP_COLS_BASE    = {"glac_id", "src_date", "glac_name", "area"}
+KEEP_COLS_BASE    = {"glac_id", "src_date", "glac_name", "area", "db_area"}
 KEEP_COLS_EXTINCT = KEEP_COLS_BASE | {"gone_date"}   # gone_date only for extinct
 KEEP_COLS_CURRENT = KEEP_COLS_BASE                   # no gone_date for active
 
