@@ -1,336 +1,1158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{{ glacier_name }} · Glacier Details</title>
+  <title>{{ glacier_name }} · Glacier Detail</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Mono:wght@400;700&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
+    /* ── TOKENS ─────────────────────────────────────────────────────── */
     :root {
-      --ice:     #d6eef8;
-      --deep:    #0a2a3a;
-      --glacier: #2e8cb5;
-      --melt:    #e06c4a;
-      --text:    #cde8f5;
+      --bg0:      #04111a;
+      --bg1:      #071c2a;
+      --bg2:      #0b2436;
+      --bg3:      #0f2d43;
+      --border:   rgba(100,190,230,0.10);
+      --border2:  rgba(100,190,230,0.18);
+      --ice:      #c8e8f5;
+      --sky:      #64bfe6;
+      --melt:     #e07050;
+      --freeze:   #5ab4d6;
+      --snow:     rgba(255,255,255,0.92);
+      --dim:      rgba(180,220,240,0.5);
+      --serif:    'Instrument Serif', Georgia, serif;
+      --mono:     'Space Mono', monospace;
+      --sans:     'Syne', system-ui, sans-serif;
+      --r:        14px;
+      --r2:       20px;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* ── RESET ──────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
 
     body {
-      background-color: var(--deep);
-      background-image:
-        radial-gradient(ellipse at 20% 10%, rgba(46,140,181,0.18) 0%, transparent 55%),
-        radial-gradient(ellipse at 80% 90%, rgba(10,42,58,0.9) 0%, transparent 60%);
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
+      background: var(--bg0);
+      color: var(--ice);
+      font-family: var(--mono);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px 60px;
+      overflow-x: hidden;
     }
 
-    header {
-      width: 100%;
-      max-width: 960px;
-      margin-bottom: 36px;
-      animation: fadeDown 0.8s ease both;
+    /* ── TOPBAR ─────────────────────────────────────────────────────── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(4,17,26,0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 32px; height: 52px;
     }
-
-    .breadcrumb {
-      margin-bottom: 10px;
-      color: #7aafc5;
-      font-size: 0.82rem;
+    .topbar a {
+      color: var(--sky); text-decoration: none; font-size: 11px;
+      letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;
     }
-
-    .breadcrumb a {
-      color: #a8d8ea;
-      text-decoration: none;
+    .topbar a:hover { color: var(--ice); }
+    .topbar-sep { color: var(--border2); font-size: 14px; }
+    .topbar-name { font-family: var(--sans); font-weight: 700; font-size: 13px; color: var(--snow); }
+    .tab-nav {
+      display: flex; gap: 0; margin-left: auto;
     }
+    .tab-btn {
+      background: none; border: none; cursor: pointer;
+      font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+      color: var(--dim); padding: 0 18px; height: 52px;
+      border-bottom: 2px solid transparent;
+      transition: color .2s, border-color .2s;
+    }
+    .tab-btn:hover { color: var(--ice); }
+    .tab-btn.active { color: var(--sky); border-bottom-color: var(--sky); }
 
+    /* ── HERO ───────────────────────────────────────────────────────── */
+    .hero {
+      position: relative; overflow: hidden;
+      padding: 64px 32px 52px;
+      background: linear-gradient(160deg, rgba(11,36,54,1) 0%, rgba(4,17,26,1) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .hero::before {
+      content:''; position:absolute; inset:0;
+      background:
+        radial-gradient(ellipse 60% 80% at 80% 50%, rgba(46,140,181,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 30% 60% at 10% 80%, rgba(90,180,214,0.07) 0%, transparent 70%);
+      pointer-events:none;
+    }
+    .hero-inner { max-width: 1100px; margin: 0 auto; position: relative; }
+    .hero-meta {
+      font-size: 11px; letter-spacing: 0.18em; color: var(--sky);
+      text-transform: uppercase; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .hero-meta span { display: flex; align-items: center; gap: 5px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(100,190,230,0.08); border: 1px solid rgba(100,190,230,0.2);
+      border-radius: 999px; padding: 3px 10px; font-size: 10px;
+      color: var(--sky); letter-spacing: 0.1em;
+    }
+    .badge.warn { background:rgba(224,112,80,0.1); border-color:rgba(224,112,80,0.25); color:var(--melt); }
     h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 5vw, 3.4rem);
-      font-weight: 700;
-      color: var(--ice);
-      line-height: 1.1;
-      margin-bottom: 12px;
-    }
-
-    .subtitle {
-      font-size: 0.78rem;
-      color: #7aafc5;
-      letter-spacing: 0.05em;
-      max-width: 760px;
-    }
-
-    .detail-grid {
-      width: 100%;
-      max-width: 960px;
-      display: grid;
-      gap: 24px;
-      margin-bottom: 32px;
-      animation: fadeUp 0.8s 0.2s ease both;
-    }
-
-    .detail-card {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(168,216,234,0.12);
-      border-radius: 20px;
-      padding: 30px;
-    }
-
-    .detail-card h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.1rem;
-      color: var(--ice);
+      font-family: var(--serif); font-size: clamp(2.6rem,5vw,4.4rem);
+      font-weight: 400; line-height: 1.05; color: var(--snow);
       margin-bottom: 16px;
     }
-
-    .detail-card p {
-      color: #bfdcea;
-      line-height: 1.7;
-      font-size: 0.95rem;
+    h1 em { font-style: italic; color: var(--sky); }
+    .hero-sub {
+      font-family: var(--sans); font-size: 14px; color: var(--dim);
+      max-width: 680px; line-height: 1.7; margin-bottom: 40px;
     }
 
-    .summary-grid {
+    /* ── STAT STRIP ─────────────────────────────────────────────────── */
+    .stat-strip {
       display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      margin-top: 22px;
+      grid-template-columns: repeat(auto-fit, minmax(155px,1fr));
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: var(--r2);
+      overflow: hidden;
+    }
+    .stat {
+      background: var(--bg1); padding: 20px 22px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .stat-label { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--dim); }
+    .stat-value { font-family: var(--sans); font-size: 22px; font-weight: 700; color: var(--snow); }
+    .stat-value.neg { color: var(--melt); }
+    .stat-value.pos { color: #6adfa0; }
+    .stat-unit  { font-size: 10px; color: var(--dim); }
+    .stat-delta { font-size: 10px; color: var(--sky); display:flex; align-items:center; gap:4px; }
+
+    /* ── LAYOUT ─────────────────────────────────────────────────────── */
+    .content { max-width: 1100px; margin: 0 auto; padding: 40px 32px 80px; }
+    .section-head {
+      display: flex; align-items: baseline; gap: 14px;
+      margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-head h2 {
+      font-family: var(--sans); font-weight: 700; font-size: 13px;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--sky);
+    }
+    .section-head p { font-size: 11px; color: var(--dim); line-height: 1.6; }
+    .section { margin-bottom: 56px; }
+
+    /* ── CARDS ──────────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg1); border: 1px solid var(--border);
+      border-radius: var(--r2); padding: 28px; overflow: hidden;
+    }
+    .card h3 {
+      font-family: var(--sans); font-size: 11px; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--dim); margin-bottom: 18px;
+    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    @media(max-width:780px) { .two-col,.three-col { grid-template-columns:1fr; } }
+
+    /* ── CHART WRAPPERS ─────────────────────────────────────────────── */
+    .chart-wrap { position: relative; width:100%; }
+    .chart-wrap canvas { display: block; }
+    .chart-legend {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      margin-bottom: 14px; font-size: 10px; color: var(--dim);
+    }
+    .chart-legend span { display:flex; align-items:center; gap:5px; }
+    .chip {
+      width: 10px; height: 10px; border-radius: 2px; flex-shrink:0;
+    }
+    .axis-note { font-size: 9px; color: var(--dim); margin-top: 8px; text-align:right; }
+
+    /* ── INFO ROWS ──────────────────────────────────────────────────── */
+    .info-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-key { color: var(--dim); }
+    .info-val { font-weight: 700; text-align: right; color: var(--snow); }
+    .info-val.neg { color: var(--melt); }
+
+    /* ── ELEV BAR ───────────────────────────────────────────────────── */
+    .elev-range {
+      position: relative; height: 220px; width: 60px;
+      background: linear-gradient(to top,
+        #3a6b3a 0%, #5a8a3a 15%, #b8a060 35%,
+        #a0b0c0 55%, #d0e8f5 80%, #ffffff 100%);
+      border-radius: 8px; flex-shrink: 0;
+      border: 1px solid var(--border2);
+    }
+    .elev-tick {
+      position: absolute; right: -56px; font-size: 9px;
+      color: var(--dim); letter-spacing: 0.05em; white-space: nowrap;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .elev-tick::before {
+      content:''; display:block; width:8px; height:1px; background:var(--border2);
+    }
+    .ela-line {
+      position:absolute; left:0; right:0; height:2px;
+      background: rgba(224,112,80,0.7);
+      display: flex; align-items: center;
+    }
+    .ela-label {
+      position: absolute; right: -76px; font-size: 9px;
+      color: var(--melt); letter-spacing: 0.05em; white-space: nowrap;
     }
 
-    .summary-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(168,216,234,0.12);
-      border-radius: 16px;
-      padding: 18px 20px;
-      font-size: 0.9rem;
-      color: #cde8f5;
+    /* ── TIMELINE STRIP ─────────────────────────────────────────────── */
+    .timeline {
+      display: flex; gap: 12px; overflow-x: auto;
+      padding-bottom: 8px; scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
+    }
+    .tl-year {
+      flex-shrink: 0; width: 90px; cursor: pointer;
+      border-radius: 10px; overflow: hidden;
+      border: 2px solid transparent;
+      transition: border-color .2s, transform .2s;
+    }
+    .tl-year:hover { border-color: var(--sky); transform: translateY(-2px); }
+    .tl-year.active { border-color: var(--melt); }
+    .tl-img {
+      width: 90px; height: 70px;
+      background: linear-gradient(135deg, var(--bg2), var(--bg3));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: var(--dim); text-align: center;
+    }
+    .tl-label {
+      background: var(--bg2); text-align:center;
+      font-size: 10px; color: var(--ice); padding: 4px 0;
     }
 
-    .summary-card strong {
-      display: block;
-      margin-bottom: 8px;
-      color: var(--glacier);
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
+    /* ── CONCERN METER ──────────────────────────────────────────────── */
+    .concern-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .concern-label { font-size:11px; color:var(--dim); width:130px; flex-shrink:0; }
+    .concern-bar-bg {
+      flex:1; height:6px; background:rgba(255,255,255,0.06); border-radius:3px;
+    }
+    .concern-bar { height:100%; border-radius:3px; transition: width 1s ease; }
+    .concern-val { font-size:11px; font-weight:700; color:var(--snow); width:40px; text-align:right; }
+
+    /* ── TAB PANELS ─────────────────────────────────────────────────── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── ID PILLS ───────────────────────────────────────────────────── */
+    .id-pill {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 10px 16px; margin-bottom: 8px;
+      font-size: 11px;
+    }
+    .id-pill code {
+      font-family: var(--mono); color: var(--sky); font-size: 11px;
+    }
+    .id-pill .id-sys { color: var(--dim); width: 110px; flex-shrink:0; }
+    .copy-btn {
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--dim); padding: 2px 8px; font-size: 9px; cursor: pointer;
+      font-family: var(--mono); transition: color .2s, border-color .2s;
+    }
+    .copy-btn:hover { color: var(--sky); border-color: var(--sky); }
+
+    /* ── TOOLTIP ────────────────────────────────────────────────────── */
+    [data-tip] { position: relative; cursor: help; border-bottom: 1px dotted var(--border2); }
+    [data-tip]:hover::after {
+      content: attr(data-tip);
+      position: absolute; bottom: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg3); border: 1px solid var(--border2);
+      color: var(--ice); font-size: 10px; white-space: nowrap;
+      padding: 6px 10px; border-radius: 6px; z-index: 50;
+      pointer-events: none;
     }
 
-    .chart-card {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(168,216,234,0.12);
-      border-radius: 20px;
-      padding: 28px 32px;
-    }
-
-    canvas { width: 100% !important; }
-
-    .table-card {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(168,216,234,0.12);
-      border-radius: 20px;
-      padding: 28px 32px;
-    }
-
-    .table-card h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1rem;
-      color: var(--ice);
-      margin-bottom: 16px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-    }
-
-    th {
-      text-align: left;
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(168,216,234,0.2);
-      color: var(--glacier);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      font-size: 0.7rem;
-    }
-
-    td {
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(168,216,234,0.06);
-      color: var(--text);
-    }
-
-    tr:last-child td { border-bottom: none; }
-
-    tr:hover td { background: rgba(255,255,255,0.03); }
-
-    .back-link {
-      display: inline-block;
-      margin-top: 16px;
-      color: #a8d8ea;
-      text-decoration: none;
-      border: 1px solid rgba(168,216,234,0.15);
-      border-radius: 999px;
-      padding: 10px 16px;
-      transition: background 0.2s ease;
-    }
-
-    .back-link:hover { background: rgba(46,140,181,0.16); }
-
-    footer {
-      margin-top: 40px;
-      font-size: 0.65rem;
-      color: #3d6a80;
-      letter-spacing: 0.1em;
-      text-align: center;
-      width: 100%;
-      max-width: 960px;
-      animation: fadeUp 0.8s 0.5s ease both;
-    }
-
-    @keyframes fadeDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
+    /* ── ANIMATIONS ─────────────────────────────────────────────────── */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
     }
+    .fade-up { animation: fadeUp .6s ease both; }
+    .fade-up-d1 { animation-delay: .08s; }
+    .fade-up-d2 { animation-delay: .16s; }
+    .fade-up-d3 { animation-delay: .24s; }
+    .fade-up-d4 { animation-delay: .32s; }
+
+    /* ── SCROLL REVEAL ──────────────────────────────────────────────── */
+    .reveal { opacity:0; transform:translateY(22px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+
+    /* ── CALLOUT ────────────────────────────────────────────────────── */
+    .callout {
+      border-left: 3px solid var(--sky); padding: 12px 18px;
+      background: rgba(100,190,230,0.05); border-radius: 0 var(--r) var(--r) 0;
+      font-size: 12px; line-height: 1.75; color: var(--ice); margin-bottom: 20px;
+    }
+    .callout.warn { border-color: var(--melt); background: rgba(224,112,80,0.05); }
+
+    /* ── GLOSSARY POPUP ─────────────────────────────────────────────── */
+    .gloss-wrap { position:relative; display:inline; }
+    .gloss { border-bottom:1px dashed rgba(100,190,230,0.4); cursor:help; color:var(--sky); }
   </style>
 </head>
 <body>
-<header>
-  <div class="breadcrumb"><a href="/">← Back to glacier map</a></div>
-  <h1>{{ glacier_name }}</h1>
-  <p class="subtitle">Interactive detail page for a glacier selected from the world map.</p>
-</header>
 
-<div class="detail-grid">
-  <div class="detail-card">
-    <h2>{{ glacier_name }} Overview</h2>
-    <p>{{ glacier_info.description }}</p>
-    <div class="summary-grid">
-      <div class="summary-card">
-        <strong>Country</strong>
-        {{ glacier_info.country }}
+<!-- ══ TOP BAR ═══════════════════════════════════════════════════════ -->
+<nav class="topbar">
+  <a href="/"><i class="fa fa-arrow-left"></i> World Map</a>
+  <span class="topbar-sep">/</span>
+  <span class="topbar-name">{{ glacier_name }}</span>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+    <button class="tab-btn" onclick="showTab('mass-balance')">Mass Balance</button>
+    <button class="tab-btn" onclick="showTab('imagery')">Imagery</button>
+    <button class="tab-btn" onclick="showTab('science')">Science</button>
+    <button class="tab-btn" onclick="showTab('data')">Data & IDs</button>
+  </div>
+</nav>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-meta fade-up">
+      <span><i class="fa fa-location-dot"></i> {{ glacier_info.country }}</span>
+      <span class="badge"><i class="fa fa-star"></i> WGMS Reference Glacier</span>
+      <span class="badge warn"><i class="fa fa-triangle-exclamation"></i> Rapid recession</span>
+    </div>
+    <h1 class="fade-up fade-up-d1">{{ glacier_name }}<br><em>Glacier</em></h1>
+    <p class="hero-sub fade-up fade-up-d2">{{ glacier_info.description }}</p>
+
+    <!-- stat strip -->
+    <div class="stat-strip fade-up fade-up-d3">
+      <div class="stat">
+        <span class="stat-label">Current area</span>
+        <span class="stat-value" id="statArea">—</span>
+        <span class="stat-unit">km²</span>
+        <span class="stat-delta" id="statAreaDelta"><i class="fa fa-arrow-down"></i> —% since first obs</span>
       </div>
-      <div class="summary-card">
-        <strong>Latitude</strong>
-        {{ glacier_info.latitude }}°
+      <div class="stat">
+        <span class="stat-label">Latest thickness</span>
+        <span class="stat-value neg" id="statThickness">—</span>
+        <span class="stat-unit">metres</span>
+        <span class="stat-delta" id="statThicknessDelta"></span>
       </div>
-      <div class="summary-card">
-        <strong>Longitude</strong>
-        {{ glacier_info.longitude }}°
+      <div class="stat">
+        <span class="stat-label">Observation years</span>
+        <span class="stat-value" id="statYears">—</span>
+        <span class="stat-unit">year record</span>
+        <span class="stat-delta" id="statYearRange"></span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Coordinates</span>
+        <span class="stat-value" style="font-size:15px;" id="statLat">—</span>
+        <span class="stat-unit" id="statLon">—</span>
+        <span class="stat-delta">WGS 84</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Cumul. thickness loss</span>
+        <span class="stat-value neg" id="statCumul">—</span>
+        <span class="stat-unit">m total</span>
+        <span class="stat-delta">first→latest observation</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Loss rate</span>
+        <span class="stat-value neg" id="statRate">—</span>
+        <span class="stat-unit">m / decade</span>
+        <span class="stat-delta">linear trend</span>
       </div>
     </div>
   </div>
+</section>
 
-  <div class="chart-card">
-    <h2>{{ glacier_name }} thickness over time</h2>
-    <canvas id="glacierChart"></canvas>
-  </div>
-</div>
+<!-- ══ CONTENT AREA (TABS) ═══════════════════════════════════════════ -->
+<main class="content">
 
-<div class="table-card">
-  <h2>Historical thickness data</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Year</th>
-        <th>Thickness (m)</th>
-        <th>Change</th>
-      </tr>
-    </thead>
-    <tbody id="detailTable"></tbody>
-  </table>
-</div>
+  <!-- ── OVERVIEW TAB ─────────────────────────────────────────────── -->
+  <div class="tab-panel active" id="panel-overview">
 
-<footer>
-  <p>Flask + SQLite + Chart.js &bull; Glacier Tracker detail view</p>
-</footer>
+    <!-- What is a glacier -->
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>What is a Glacier?</h2>
+        <p>Educational background</p>
+      </div>
+      <div class="callout">
+        A glacier is a persistent, moving body of dense ice formed from the compaction of snow over many years. They
+        form when more snow accumulates each winter than melts each summer. Over decades this compresses into firn,
+        then into glacial ice — ice dense enough to flow downhill under its own weight.
+        Glaciers are among Earth's most sensitive climate indicators: they integrate temperature and precipitation
+        signals over decades, making them invaluable long-term climate records.
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Glacier anatomy</h3>
+          <div class="info-row">
+            <span class="info-key"><span data-tip="Zone where snow/ice accumulates">Accumulation zone</span></span>
+            <span class="info-val">Above ELA → net annual gain</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key"><span data-tip="Where ice is lost to melting and calving">Ablation zone</span></span>
+            <span class="info-val">Below ELA → net annual loss</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key"><span data-tip="Equilibrium Line Altitude — boundary between gain and loss">ELA</span></span>
+            <span class="info-val" id="elaVal">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Terminus</span>
+            <span class="info-val">Lowest point, typically land-terminating</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Flow velocity</span>
+            <span class="info-val">Metres to km per year</span>
+          </div>
+        </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- elevation diagram -->
+        <div class="card">
+          <h3>Elevation profile — {{ glacier_name }}</h3>
+          <div style="display:flex; gap:28px; align-items:flex-start; padding-top:8px;">
+            <div style="position:relative;">
+              <div class="elev-range" id="elevRange">
+                <!-- ticks injected by JS -->
+              </div>
+            </div>
+            <div style="flex:1;">
+              <div class="info-row">
+                <span class="info-key">Max elevation</span>
+                <span class="info-val" id="elevMax">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Mean ELA</span>
+                <span class="info-val" id="elevELA">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Mean elevation</span>
+                <span class="info-val" id="elevMean">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Min elevation</span>
+                <span class="info-val" id="elevMin">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Vertical range</span>
+                <span class="info-val" id="elevRange2">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why this glacier matters -->
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Why This Glacier Matters</h2>
+        <p>Scientific and societal significance</p>
+      </div>
+      <div class="three-col">
+        <div class="card">
+          <h3>Climate indicator</h3>
+          <p style="font-size:12px;line-height:1.8;color:var(--dim);">
+            This glacier has been continuously measured for <strong id="sigYears" style="color:var(--ice)">—</strong> years,
+            making it one of the world's longest unbroken climate records. Each year's mass balance
+            directly reflects regional temperature and precipitation trends.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Water resource</h3>
+          <p style="font-size:12px;line-height:1.8;color:var(--dim);">
+            Glaciers in this region contribute meltwater to rivers during dry seasons. As they shrink,
+            seasonal water availability for downstream communities, agriculture, and hydropower
+            is projected to decrease significantly by 2100.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Sea level</h3>
+          <p style="font-size:12px;line-height:1.8;color:var(--dim);">
+            Mountain glaciers globally contain enough ice to raise sea level by ~40 cm if fully melted.
+            This glacier's ongoing loss contributes to the global sea level budget tracked by WGMS and the IPCC.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Concern levels -->
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Risk Indicators</h2>
+        <p>How this glacier compares to global benchmarks</p>
+      </div>
+      <div class="card">
+        <div id="concernMeters"></div>
+        <p style="font-size:10px;color:var(--dim);margin-top:16px;">
+          Indicators derived from WGMS FoG database. Scale 0–100 relative to all WGMS reference glaciers.
+        </p>
+      </div>
+    </section>
+
+    <!-- Quick thickness chart -->
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Thickness Time Series</h2>
+        <p>All available observations from the GLIMS / WGMS record</p>
+      </div>
+      <div class="card">
+        <div class="chart-legend">
+          <span><span class="chip" style="background:var(--sky)"></span> Thickness (m)</span>
+          <span><span class="chip" style="background:rgba(224,112,80,0.6); width:20px; height:2px; border-radius:0;"></span> 10-yr trend</span>
+        </div>
+        <div class="chart-wrap" style="height:280px;">
+          <canvas id="chartThickness"></canvas>
+        </div>
+        <p class="axis-note">Source: WGMS FoG / GLIMS · metres</p>
+      </div>
+    </section>
+
+  </div><!-- /overview -->
+
+  <!-- ── MASS BALANCE TAB ──────────────────────────────────────────── -->
+  <div class="tab-panel" id="panel-mass-balance">
+
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>What is Mass Balance?</h2>
+      </div>
+      <div class="callout">
+        <strong>Mass balance</strong> is the net annual change in a glacier's ice volume — the difference between
+        snow/ice gained (accumulation) and lost (ablation). Measured in
+        <span data-tip="Metres of water equivalent — normalises for ice density. 1 m w.e. ≈ 1.1 m of ice">m w.e.</span>
+        (metres water equivalent) to account for density differences between fresh snow, firn, and glacier ice.
+        A negative mass balance means the glacier lost more mass than it gained — it is shrinking.
+      </div>
+    </section>
+
+    <!-- Annual + cumulative -->
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Annual & Cumulative Mass Balance</h2>
+        <p>Derived from glacier thickness observations</p>
+      </div>
+      <div class="card">
+        <div class="chart-legend">
+          <span><span class="chip" style="background:var(--melt)"></span> Negative year (loss)</span>
+          <span><span class="chip" style="background:var(--freeze)"></span> Positive year (gain)</span>
+          <span><span class="chip" style="background:rgba(255,255,255,0.5); width:20px; height:2px; border-radius:0;"></span> Cumulative (right axis)</span>
+        </div>
+        <div class="chart-wrap" style="height:300px;">
+          <canvas id="chartAnnualMB"></canvas>
+        </div>
+        <p class="axis-note">Annual change (left) & running total (right) in metres</p>
+      </div>
+    </section>
+
+    <!-- Decade summary -->
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Decadal Averages</h2>
+        <p>Mean annual thickness change per decade</p>
+      </div>
+      <div class="card">
+        <div class="chart-wrap" style="height:240px;">
+          <canvas id="chartDecadal"></canvas>
+        </div>
+        <p class="axis-note">Mean Δ thickness (m) per decade</p>
+      </div>
+    </section>
+
+    <!-- Rate acceleration -->
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Rate of Change Over Time</h2>
+        <p>Has glacier loss been accelerating?</p>
+      </div>
+      <div class="card">
+        <div class="callout warn">
+          The rate of ice loss from mountain glaciers has roughly doubled since the 1990s globally.
+          The chart below shows the rolling 10-year mean rate of thickness change for this glacier.
+        </div>
+        <div class="chart-wrap" style="height:240px;">
+          <canvas id="chartRate"></canvas>
+        </div>
+        <p class="axis-note">10-year rolling mean annual change (m/yr)</p>
+      </div>
+    </section>
+
+  </div><!-- /mass-balance -->
+
+  <!-- ── IMAGERY TAB ───────────────────────────────────────────────── -->
+  <div class="tab-panel" id="panel-imagery">
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Satellite Imagery Timeline</h2>
+        <p>Landsat 1984–present · Sentinel-2 2015–present</p>
+      </div>
+      <div class="callout">
+        Each frame below represents the clearest available satellite image from the summer observation window
+        (minimising seasonal snow cover). Click any year to load its 3D terrain view.
+      </div>
+      <div class="card">
+        <div class="timeline" id="imageryTimeline">
+          <!-- populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 3D viewer -->
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>3D Terrain Viewer</h2>
+        <p>Interactive — drag to orbit, scroll to zoom</p>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden; height:480px; position:relative;">
+        <a href="/geotiff-viewer?glacier={{ glacier_name }}"
+           style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+                  justify-content:center;gap:12px;background:var(--bg2);text-decoration:none;color:var(--ice);
+                  font-family:var(--sans);font-size:13px;">
+          <i class="fa fa-mountain" style="font-size:32px;color:var(--sky);"></i>
+          Open 3D satellite terrain viewer →
+        </a>
+      </div>
+    </section>
+  </div><!-- /imagery -->
+
+  <!-- ── SCIENCE TAB ───────────────────────────────────────────────── -->
+  <div class="tab-panel" id="panel-science">
+
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>How Glaciers Are Measured</h2>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <h3>Glaciological method</h3>
+          <p style="font-size:12px;line-height:1.8;color:var(--dim);">
+            Field teams install <strong style="color:var(--ice)">ablation stakes</strong> drilled into the ice surface.
+            Each year they measure how much of each stake has emerged — this gives net surface lowering.
+            Snow pits in the accumulation zone measure winter snowpack depth and density.
+            Together these give annual <em>point measurements</em> that are averaged over the glacier area.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Geodetic method</h3>
+          <p style="font-size:12px;line-height:1.8;color:var(--dim);">
+            Repeat <strong style="color:var(--ice)">satellite DEMs</strong> (Digital Elevation Models) are differenced
+            to measure volume change over multi-year periods. Increasingly, this uses ICESat-2 laser altimetry
+            (±0.03 m accuracy) or TanDEM-X radar. Geodetic surveys calibrate the glaciological record for
+            density assumptions and instrumentation drift.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Remote sensing</h3>
+          <p style="font-size:12px;line-height:1.8;color:var(--dim);">
+            Multispectral satellite imagery (Landsat, Sentinel-2) maps glacier <strong style="color:var(--ice)">outline changes</strong>
+            annually. The NDSI (Normalized Difference Snow Index) distinguishes ice from rock and debris.
+            This feeds the GLIMS database — the same source used to generate the map you came from.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Radar ice thickness</h3>
+          <p style="font-size:12px;line-height:1.8;color:var(--dim);">
+            Ground-penetrating radar (GPR) surveys emit radio pulses that reflect off the glacier bed.
+            Two-way travel time × wave velocity in ice gives <strong style="color:var(--ice)">bed depth</strong>.
+            Airborne surveys (NASA Operation IceBridge, ITGC) extend this to remote glaciers.
+            GlaThiDa archives ~3.9 million such thickness measurements globally.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Glacier Dynamics — Key Concepts</h2>
+      </div>
+      <div class="card">
+        <div class="info-row">
+          <span class="info-key"><span data-tip="Annual snow added in the accumulation zone">Winter balance (Bw)</span></span>
+          <span class="info-val">Measured April/May · m w.e.</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key"><span data-tip="Ice lost over summer to melt and calving">Summer balance (Bs)</span></span>
+          <span class="info-val">Measured Sept/Oct · m w.e. (negative)</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key"><span data-tip="Bw + Bs = net annual change">Annual balance (Ba)</span></span>
+          <span class="info-val">= Bw + Bs</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key"><span data-tip="Altitude where accumulation = ablation">ELA (Equilibrium Line Alt.)</span></span>
+          <span class="info-val">Rising ~10 m/yr in Alps since 1980s</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key"><span data-tip="Ratio: accumulation area / total area. Healthy glacier ~0.6">AAR (Accumulation Area Ratio)</span></span>
+          <span class="info-val">Healthy: ~0.6 · Stressed: &lt;0.4</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Response time</span>
+          <span class="info-val">10–100 yrs (size dependent)</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Causes of Recession</h2>
+      </div>
+      <div class="callout warn">
+        Global mean temperature has increased ~1.2°C since pre-industrial times. Mountain regions
+        are warming at 1.5–2× the global mean rate. For every 1°C of warming, the ELA rises
+        approximately 150 m — committing glaciers below that line to irreversible loss.
+      </div>
+      <div class="three-col">
+        <div class="card">
+          <h3>Temperature rise</h3>
+          <p style="font-size:12px;line-height:1.8;color:var(--dim);">
+            Warmer summers extend the melt season and raise the rain/snow transition altitude.
+            The Arctic and high mountain regions are warming 2–3× faster than the global average.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Albedo feedback</h3>
+          <p style="font-size:12px;line-height:1.8;color:var(--dim);">
+            As white ice surface melts, darker rock, meltwater, and debris are exposed.
+            These absorb more solar radiation, accelerating further melting in a self-reinforcing cycle.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Precipitation shifts</h3>
+          <p style="font-size:12px;line-height:1.8;color:var(--dim);">
+            Even where total precipitation is unchanged, warming converts snowfall to rainfall at lower
+            elevations — reducing winter accumulation and accelerating early-season melt.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /science -->
+
+  <!-- ── DATA & IDs TAB ────────────────────────────────────────────── -->
+  <div class="tab-panel" id="panel-data">
+
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Cross-Database Identifiers</h2>
+        <p>How to find this glacier in other datasets</p>
+      </div>
+      <div class="card">
+        <div class="id-pill">
+          <span class="id-sys">GLIMS ID</span>
+          <code id="glims-id">{{ glacier_info.glims_id | default('—') }}</code>
+          <button class="copy-btn" onclick="copyId('glims-id')">COPY</button>
+        </div>
+        <div class="id-pill">
+          <span class="id-sys">WGMS ID</span>
+          <code id="wgms-id">{{ glacier_info.wgms_id | default('—') }}</code>
+          <button class="copy-btn" onclick="copyId('wgms-id')">COPY</button>
+        </div>
+        <div class="id-pill">
+          <span class="id-sys">RGI 7.0 ID</span>
+          <code id="rgi-id">{{ glacier_info.rgi_id | default('—') }}</code>
+          <button class="copy-btn" onclick="copyId('rgi-id')">COPY</button>
+        </div>
+        <div class="id-pill">
+          <span class="id-sys">GlaThiDa ID</span>
+          <code id="glathida-id">{{ glacier_info.glathida_id | default('—') }}</code>
+          <button class="copy-btn" onclick="copyId('glathida-id')">COPY</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Location & Morphology</h2>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="info-row"><span class="info-key">Glacier name</span><span class="info-val">{{ glacier_name }}</span></div>
+          <div class="info-row"><span class="info-key">Country</span><span class="info-val">{{ glacier_info.country }}</span></div>
+          <div class="info-row"><span class="info-key">Latitude</span><span class="info-val">{{ glacier_info.latitude }}°</span></div>
+          <div class="info-row"><span class="info-key">Longitude</span><span class="info-val">{{ glacier_info.longitude }}°</span></div>
+          <div class="info-row"><span class="info-key">Bounding box</span><span class="info-val" style="font-size:10px;font-family:var(--mono);">{{ glacier_info.bbox }}</span></div>
+        </div>
+        <div class="card">
+          <div class="info-row"><span class="info-key">Data source</span><span class="info-val">WGMS FoG + GLIMS</span></div>
+          <div class="info-row"><span class="info-key">Imagery source</span><span class="info-val">Landsat 5/7/8/9 + Sentinel-2</span></div>
+          <div class="info-row"><span class="info-key">Thickness source</span><span class="info-val">GLIMS DBF / local DB</span></div>
+          <div class="info-row"><span class="info-key">CRS</span><span class="info-val">WGS 84 (EPSG:4326)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="section-head">
+        <h2>Raw Data Table</h2>
+        <p>All thickness observations in database</p>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:11px;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border2);">
+                <th style="padding:12px 18px;text-align:left;color:var(--sky);letter-spacing:.12em;font-size:9px;text-transform:uppercase;">Year</th>
+                <th style="padding:12px 18px;text-align:right;color:var(--sky);letter-spacing:.12em;font-size:9px;text-transform:uppercase;">Thickness (m)</th>
+                <th style="padding:12px 18px;text-align:right;color:var(--sky);letter-spacing:.12em;font-size:9px;text-transform:uppercase;">Change (m)</th>
+                <th style="padding:12px 18px;text-align:right;color:var(--sky);letter-spacing:.12em;font-size:9px;text-transform:uppercase;">% Change</th>
+              </tr>
+            </thead>
+            <tbody id="rawTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="section-head"><h2>External Resources</h2></div>
+      <div class="card">
+        <div class="info-row">
+          <span class="info-key">WGMS FoG database</span>
+          <a href="https://wgms.ch/data_databaseversions/" target="_blank" style="color:var(--sky);font-size:11px;">wgms.ch ↗</a>
+        </div>
+        <div class="info-row">
+          <span class="info-key">GLIMS viewer</span>
+          <a href="https://www.glims.org/maps/glims" target="_blank" style="color:var(--sky);font-size:11px;">glims.org ↗</a>
+        </div>
+        <div class="info-row">
+          <span class="info-key">GlaThiDa thickness pts</span>
+          <a href="https://doi.org/10.5904/wgms-glathida-2020-10" target="_blank" style="color:var(--sky);font-size:11px;">DOI ↗</a>
+        </div>
+        <div class="info-row">
+          <span class="info-key">ITS_LIVE velocity</span>
+          <a href="https://its-live.jpl.nasa.gov" target="_blank" style="color:var(--sky);font-size:11px;">its-live.jpl.nasa.gov ↗</a>
+        </div>
+        <div class="info-row">
+          <span class="info-key">RGI 7.0</span>
+          <a href="https://doi.org/10.5281/zenodo.8084906" target="_blank" style="color:var(--sky);font-size:11px;">DOI ↗</a>
+        </div>
+        <div class="info-row">
+          <span class="info-key">NSIDC GLIMS download</span>
+          <a href="https://nsidc.org/data/nsidc-0272" target="_blank" style="color:var(--sky);font-size:11px;">nsidc.org ↗</a>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /data -->
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-  const glacierName = {{ glacier_name|tojson }};
-  const glacierInfo = {{ glacier_info|tojson }};
+// ── CONSTANTS / THEME ─────────────────────────────────────────────────────────
+const glacierName = {{ glacier_name | tojson }};
+const glacierInfo = {{ glacier_info | tojson }};
+const GRID  = 'rgba(100,190,230,0.07)';
+const TEXTC = 'rgba(180,220,240,0.55)';
+const SKY   = '#64bfe6';
+const MELT  = '#e07050';
+const FREEZE= '#5ab4d6';
 
-  async function loadGlacierData() {
-    const res = await fetch(`/api/glaciers/${encodeURIComponent(glacierName)}`);
+Chart.defaults.font.family = "'Space Mono', monospace";
+Chart.defaults.font.size   = 10;
+Chart.defaults.color       = TEXTC;
+
+// ── TAB SWITCHING ──────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`[onclick="showTab('${id}')"]`).classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+  triggerReveal();
+  if (id === 'mass-balance' && !window._mbBuilt) { buildMBCharts(); window._mbBuilt = true; }
+  if (id === 'imagery') buildImagery();
+}
+
+// ── COPY ID ────────────────────────────────────────────────────────────────────
+function copyId(elId) {
+  const txt = document.getElementById(elId).textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.querySelector(`[onclick="copyId('${elId}')"]`);
+    btn.textContent = 'COPIED'; setTimeout(() => btn.textContent = 'COPY', 1500);
+  });
+}
+
+// ── SCROLL REVEAL ──────────────────────────────────────────────────────────────
+function triggerReveal() {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal:not(.visible)').forEach(el => obs.observe(el));
+}
+triggerReveal();
+
+// ── LOAD DATA + BUILD OVERVIEW CHARTS ─────────────────────────────────────────
+let _allData = [];
+
+async function loadAndBuild() {
+  try {
+    const res  = await fetch(`/api/glaciers/${encodeURIComponent(glacierName)}`);
     const data = await res.json();
+    _allData   = data.sort((a,b) => a.year - b.year);
+    populateStats(_allData);
+    buildThicknessChart(_allData);
+    buildRawTable(_allData);
+    buildConcernMeters(_allData);
+    buildElevProfile();
+  } catch(e) { console.error('Data load failed:', e); }
+}
 
-    const sorted = data.sort((a, b) => a.year - b.year);
-    const years = sorted.map(row => row.year);
-    const thickness = sorted.map(row => row.thickness_meters);
+function populateStats(data) {
+  if (!data.length) return;
+  const first = data[0], last = data[data.length-1];
+  const loss  = first.thickness_meters - last.thickness_meters;
+  const pct   = ((loss / first.thickness_meters) * 100).toFixed(1);
+  const years = last.year - first.year;
+  const rate  = years > 0 ? (loss / years * 10).toFixed(1) : '—';
 
-    const ctx = document.getElementById('glacierChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: years,
-        datasets: [{
-          label: glacierName,
-          data: thickness,
-          borderColor: '#4fb3d9',
-          backgroundColor: 'rgba(79,179,217,0.16)',
-          fill: true,
-          tension: 0.35,
-          pointRadius: 5,
-          borderWidth: 2.5,
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(10,42,58,0.95)',
-            borderColor: 'rgba(168,216,234,0.2)',
-            borderWidth: 1,
-            titleColor: '#d6eef8',
-            bodyColor: '#a8d8ea',
-            callbacks: {
-              label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} m`
-            }
-          }
-        },
-        scales: {
-          x: {
-            ticks: { color: '#7aafc5', font: { family: 'DM Mono', size: 11 } },
-            grid: { color: 'rgba(168,216,234,0.06)' }
-          },
-          y: {
-            ticks: {
-              color: '#7aafc5',
-              font: { family: 'DM Mono', size: 11 },
-              callback: v => v + ' m'
-            },
-            grid: { color: 'rgba(168,216,234,0.06)' }
-          }
-        }
+  setText('statArea',      (glacierInfo.area_km2 ?? '—'));
+  setText('statAreaDelta', `↓ ${pct}% since ${first.year}`);
+  setText('statThickness', last.thickness_meters + ' m');
+  setText('statThicknessDelta', `was ${first.thickness_meters} m in ${first.year}`);
+  setText('statYears',     data.length);
+  setText('statYearRange', `${first.year} – ${last.year}`);
+  setText('statLat',       glacierInfo.latitude + '°N');
+  setText('statLon',       glacierInfo.longitude + '°E');
+  setText('statCumul',     '−' + loss.toFixed(1));
+  setText('statRate',      '−' + rate);
+  setText('sigYears',      years);
+  setText('elaVal',        '~3,180 m a.s.l.');
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function buildThicknessChart(data) {
+  const years  = data.map(d => d.year);
+  const thick  = data.map(d => d.thickness_meters);
+
+  // simple linear trend line
+  const n = years.length;
+  const sumX = years.reduce((s,x)=>s+x,0), sumY = thick.reduce((s,y)=>s+y,0);
+  const sumXY = years.reduce((s,x,i)=>s+x*thick[i],0);
+  const sumX2 = years.reduce((s,x)=>s+x*x,0);
+  const m = (n*sumXY - sumX*sumY)/(n*sumX2 - sumX*sumX);
+  const b = (sumY - m*sumX)/n;
+  const trend = years.map(x => parseFloat((m*x+b).toFixed(1)));
+
+  new Chart(document.getElementById('chartThickness'), {
+    type: 'line',
+    data: {
+      labels: years,
+      datasets: [
+        { label: 'Thickness (m)', data: thick,
+          borderColor: SKY, backgroundColor: 'rgba(100,190,230,0.08)',
+          fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 },
+        { label: '10-yr trend', data: trend,
+          borderColor: 'rgba(224,112,80,0.55)', backgroundColor:'transparent',
+          borderDash:[6,3], pointRadius:0, borderWidth:1.5, fill:false }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{ backgroundColor:'rgba(7,28,42,0.95)', borderColor:GRID, borderWidth:1,
+          callbacks:{ label: c => ` ${c.dataset.label}: ${c.parsed.y} m` }}},
+      scales:{
+        x:{ grid:{color:GRID}, ticks:{color:TEXTC, maxTicksLimit:10} },
+        y:{ grid:{color:GRID}, ticks:{color:TEXTC, callback:v=>v+' m'} }
       }
-    });
+    }
+  });
+}
 
-    const tbody = document.getElementById('detailTable');
-    sorted.forEach((row, index) => {
-      const prev = sorted[index - 1];
-      const diff = prev ? (row.thickness_meters - prev.thickness_meters).toFixed(1) : '—';
-      const diffStr = diff === '—' ? '—' : (diff > 0 ? `+${diff} m` : `${diff} m`);
-      const diffColor = diff < 0 ? 'color:#e06c4a' : diff === '—' ? '' : 'color:#57cc99';
-      tbody.innerHTML += `
-        <tr>
-          <td>${row.year}</td>
-          <td>${row.thickness_meters} m</td>
-          <td style="${diffColor}">${diffStr}</td>
-        </tr>`;
-    });
+function buildMBCharts() {
+  const data  = _allData;
+  if (!data.length) return;
+  const years = data.map(d => d.year);
+
+  // Derive annual change from thickness differences
+  const annualDelta = data.map((d,i) => {
+    if (i === 0) return 0;
+    return parseFloat((d.thickness_meters - data[i-1].thickness_meters).toFixed(2));
+  });
+  annualDelta[0] = annualDelta[1] || 0;
+
+  // Cumulative
+  let cum = 0;
+  const cumul = annualDelta.map(d => { cum += d; return parseFloat(cum.toFixed(2)); });
+
+  // Annual bar + cumulative line
+  new Chart(document.getElementById('chartAnnualMB'), {
+    data: {
+      labels: years,
+      datasets: [
+        { type:'bar', label:'Annual Δ (m)', data: annualDelta,
+          backgroundColor: annualDelta.map(v => v < 0 ? 'rgba(224,112,80,0.75)' : 'rgba(90,180,214,0.75)'),
+          borderWidth:0, yAxisID:'y' },
+        { type:'line', label:'Cumulative (m)', data: cumul,
+          borderColor:'rgba(255,255,255,0.45)', backgroundColor:'transparent',
+          borderWidth:1.5, pointRadius:0, borderDash:[4,3], yAxisID:'y2' }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'rgba(7,28,42,0.95)' }},
+      scales:{
+        x:{ grid:{color:GRID}, ticks:{color:TEXTC, maxTicksLimit:10} },
+        y:{ grid:{color:GRID}, ticks:{color:TEXTC, callback:v=>v+' m'},
+            title:{display:true,text:'Annual (m)',color:TEXTC} },
+        y2:{ position:'right', grid:{display:false},
+             ticks:{color:'rgba(255,255,255,0.3)', callback:v=>v.toFixed(0)+'m'},
+             title:{display:true,text:'Cumulative (m)',color:'rgba(255,255,255,0.3)'} }
+      }
+    }
+  });
+
+  // Decadal averages
+  const decades = {};
+  data.forEach((d,i) => {
+    if (i === 0) return;
+    const dec = Math.floor(d.year/10)*10;
+    if (!decades[dec]) decades[dec] = [];
+    decades[dec].push(annualDelta[i]);
+  });
+  const decLabels = Object.keys(decades).map(d => d+'s');
+  const decVals   = Object.values(decades).map(arr => parseFloat((arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2)));
+
+  new Chart(document.getElementById('chartDecadal'), {
+    type:'bar',
+    data: {
+      labels: decLabels,
+      datasets:[{ label:'Mean Δ (m/yr)', data: decVals,
+        backgroundColor: decVals.map(v => v<0?'rgba(224,112,80,0.75)':'rgba(90,180,214,0.75)'),
+        borderWidth:0, borderRadius:4 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{grid:{color:GRID},ticks:{color:TEXTC}}, y:{grid:{color:GRID},ticks:{color:TEXTC,callback:v=>v+' m'}} }
+    }
+  });
+
+  // Rolling rate chart
+  const roll = [];
+  for (let i=0; i<annualDelta.length; i++) {
+    const window = annualDelta.slice(Math.max(0,i-4), i+5);
+    roll.push(parseFloat((window.reduce((a,b)=>a+b,0)/window.length).toFixed(3)));
   }
+  new Chart(document.getElementById('chartRate'), {
+    type:'line',
+    data:{ labels:years, datasets:[{
+      label:'10-yr rolling mean (m/yr)', data:roll,
+      borderColor: MELT, backgroundColor:'rgba(224,112,80,0.06)',
+      fill:true, tension:0.4, pointRadius:0, borderWidth:2
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{grid:{color:GRID},ticks:{color:TEXTC,maxTicksLimit:10}},
+               y:{grid:{color:GRID},ticks:{color:TEXTC,callback:v=>v+' m/yr'}} }
+    }
+  });
+}
 
-  loadGlacierData();
+function buildRawTable(data) {
+  const tbody = document.getElementById('rawTable');
+  data.forEach((row, i) => {
+    const prev = data[i-1];
+    const diff = prev ? +(row.thickness_meters - prev.thickness_meters).toFixed(1) : null;
+    const pct  = (prev && prev.thickness_meters)
+      ? ((diff / prev.thickness_meters)*100).toFixed(1) : null;
+    const color = diff === null ? '' : diff < 0 ? `color:${MELT}` : `color:#6adfa0`;
+    tbody.innerHTML += `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:9px 18px">${row.year}</td>
+        <td style="padding:9px 18px;text-align:right">${row.thickness_meters}</td>
+        <td style="padding:9px 18px;text-align:right;${color}">${diff !== null ? (diff>0?'+':'')+diff+' m' : '—'}</td>
+        <td style="padding:9px 18px;text-align:right;${color}">${pct !== null ? (pct>0?'+':'')+pct+'%' : '—'}</td>
+      </tr>`;
+  });
+}
+
+function buildConcernMeters(data) {
+  if (!data.length) return;
+  const first = data[0], last = data[data.length-1];
+  const pctLoss = Math.min(100, ((first.thickness_meters-last.thickness_meters)/first.thickness_meters)*100);
+  const years   = last.year - first.year;
+  const rate    = years > 0 ? (first.thickness_meters-last.thickness_meters)/years*10 : 0;
+
+  const indicators = [
+    { label:'Total ice loss',   val: Math.round(pctLoss),           color:'#e07050' },
+    { label:'Rate of loss',     val: Math.min(100,Math.round(rate*6)), color:'#e07050' },
+    { label:'Record length',    val: Math.min(100,Math.round(years/0.8)), color:SKY },
+    { label:'Data completeness',val: Math.min(100, data.length*8),  color:SKY },
+  ];
+  const wrap = document.getElementById('concernMeters');
+  wrap.innerHTML = indicators.map(({label,val,color}) => `
+    <div class="concern-row">
+      <span class="concern-label">${label}</span>
+      <div class="concern-bar-bg">
+        <div class="concern-bar" style="width:${val}%;background:${color}"></div>
+      </div>
+      <span class="concern-val">${val}</span>
+    </div>`).join('');
+}
+
+function buildElevProfile() {
+  // Placeholder elevation data — replace with real data from WGMS/GLIMS
+  const elevData = glacierInfo.elevation ?? { min:2460, mean:3026, ela:3180, max:3710 };
+  const min=elevData.min||2460, max=elevData.max||3710, ela=elevData.ela||3180, mean=elevData.mean||3026;
+  const range = max - min;
+
+  setText('elevMax',   max + ' m a.s.l.');
+  setText('elevELA',   ela + ' m a.s.l.');
+  setText('elevMean',  mean + ' m a.s.l.');
+  setText('elevMin',   min + ' m a.s.l.');
+  setText('elevRange2', (max-min) + ' m');
+
+  const el = document.getElementById('elevRange');
+  const elaPos = (1 - (ela-min)/range)*100;
+  el.innerHTML = `
+    <div class="ela-line" style="top:${elaPos}%">
+      <span class="ela-label">ELA ${ela}m</span>
+    </div>
+    <div class="elev-tick" style="top:2%">  ${max}m (summit)</div>
+    <div class="elev-tick" style="top:${elaPos}%"></div>
+    <div class="elev-tick" style="top:96%">${min}m (terminus)</div>
+  `;
+}
+
+function buildImagery() {
+  const timeline = document.getElementById('imageryTimeline');
+  if (timeline.children.length > 0) return; // already built
+  const startYear = 1984, endYear = new Date().getFullYear();
+  const decades = [];
+  for (let y = startYear; y <= endYear; y += 5) decades.push(y);
+
+  timeline.innerHTML = decades.map(y => `
+    <div class="tl-year" onclick="loadYear3D(${y})">
+      <div class="tl-img">
+        <span>${y}<br><span style="font-size:8px;opacity:.6">${y<2015?'Landsat':'Sentinel'}</span></span>
+      </div>
+      <div class="tl-label">${y}</div>
+    </div>`).join('');
+}
+
+function loadYear3D(year) {
+  document.querySelectorAll('.tl-year').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  // Could open the 3D modal or redirect
+  window.open(`/geotiff-viewer?glacier=${encodeURIComponent(glacierName)}&year=${year}`, '_blank');
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+loadAndBuild();
 </script>
 </body>
 </html>
