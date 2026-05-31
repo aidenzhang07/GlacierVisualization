@@ -1,0 +1,158 @@
+==================================================================
+  GLIMS Reference Glacier Match Report
+  Generated: 2026-05-31 08:30:38 UTC
+==================================================================
+
+  Input names   : 62
+  Matched       : 40
+  No match      : 23
+  Total rows    : 722
+  Unique glac_id: 109
+
+──────────────────────────────────────────────────────────────────
+  MATCHED GLACIERS
+──────────────────────────────────────────────────────────────────
+  ✓  Rhonegletscher                        18 rows  [glims-id]
+     glac_id(s): G008398E46623N
+  ✓  GULKANA                                5 rows  [contains]
+     glac_id(s): G214576E63274N, G214483E63283N
+  ✓  GULKANA                                3 rows  [glims-id]
+     glac_id(s): G214576E63274N
+  ✓  WOLVERINE                             14 rows  [contains]
+     glac_id(s): G211100E60420N
+  ✓  EASTON                                 2 rows  [contains]
+     glac_id(s): G238169E48750N
+  ✓  LEMON CREEK                           19 rows  [contains]
+     glac_id(s): G225667E58407N, G225653E58370N, G225670E58400N...
+  ✓  RAINBOW                               12 rows  [contains]
+     glac_id(s): G224494E59114N, G238220E48799N, G245913E48878N...
+  ✓  SOUTH CASCADE                          3 rows  [contains]
+     glac_id(s): G238936E48358N, G238931E48356N
+  ✓  HELM                                  20 rows  [contains]
+     glac_id(s): G012103E47139N, G237011E49960N, G012096E47136N
+  ✓  PEYTO                                  1 rows  [contains]
+     glac_id(s): G243446E51658N
+  ✓  PLACE                                 13 rows  [contains]
+     glac_id(s): G006767E45290N, G237393E50422N
+  ✓  DEVON ICE CAP NW                       1 rows  [contains]
+     glac_id(s): G276838E75498N
+  ✓  MEIGHEN ICE CAP                        2 rows  [exact]
+     glac_id(s): G260810E79982N
+  ✓  MELVILLE SOUTH ICE CAP                 2 rows  [exact]
+     glac_id(s): G245035E75429N
+  ✓  WHITE                                  1 rows  [exact]
+     glac_id(s): G269329E79672N
+  ✓  ENGABREEN                              5 rows  [exact]
+     glac_id(s): G013853E66657N, G013840E66657N
+  ✓  GRAASUBREEN                            7 rows  [exact]
+     glac_id(s): G008600E61657N
+  ✓  HELLSTUGUBREEN                         6 rows  [exact]
+     glac_id(s): G008441E61556N
+  ✓  LANGFJORDJOEKELEN                     13 rows  [exact]
+     glac_id(s): G021737E70130N
+  ✓  NIGARDSBREEN                           5 rows  [exact]
+     glac_id(s): G007099E61715N
+  ✓  STORBREEN                             18 rows  [exact]
+     glac_id(s): G008132E61573N, G016172E77192N, G007577E62248N...
+  ✓  RIUKOJIETNA                            1 rows  [exact]
+     glac_id(s): G018038E68082N
+  ✓  GOLDBERGKEES                          15 rows  [exact]
+     glac_id(s): G012967E47042N
+  ✓  HINTEREISFERNER                       10 rows  [exact]
+     glac_id(s): G010752E46802N
+  ✓  KESSELWANDFERNER                      11 rows  [exact]
+     glac_id(s): G010788E46845N
+  ✓  PASTERZE                              17 rows  [exact]
+     glac_id(s): G012678E47096N
+  ✓  VERNAGTFERNER                         15 rows  [exact]
+     glac_id(s): G010823E46875N
+  ✓  ALLALIN                               13 rows  [contains]
+     glac_id(s): G007896E46027N
+  ✓  BASÒDINO                              13 rows  [contains]
+     glac_id(s): G008475E46414N
+  ✓  CLARIDEN                              69 rows  [contains]
+     glac_id(s): G008883E46833N, G008872E46843N, G008888E46846N...
+  ✓  GIÉTRO                                26 rows  [contains]
+     glac_id(s): G007394E45986N, G007413E45991N
+  ✓  GRIES                                260 rows  [contains]
+     glac_id(s): G008319E46431N, G008500E46841N, G008781E46817N...
+  ✓  SILVRETTA                             15 rows  [contains]
+     glac_id(s): G010084E46850N
+  ✓  MALADETA                               2 rows  [contains]
+     glac_id(s): G000632E42652N, G000638E42651N
+  ✓  ARGENTIÈRE                            53 rows  [contains]
+     glac_id(s): G006974E45585N, G006985E45951N, G006134E45248N...
+  ✓  SAINT SORLIN                          12 rows  [exact]
+     glac_id(s): G006159E45160N
+  ✓  CIARDONEY                              7 rows  [exact]
+     glac_id(s): G007390E45518N
+  ✓  DJANKUAT                               4 rows  [exact]
+     glac_id(s): G042778E43201N, G042779E43200N, G042774E43200N
+  ✓  GARABASHI                             12 rows  [exact]
+     glac_id(s): G042460E43301N, G042470E43302N, G042470E43307N...
+  ✓  ABRAMOV                                2 rows  [contains]
+     glac_id(s): G071570E39610N
+
+──────────────────────────────────────────────────────────────────
+  UNMATCHED GLACIERS
+──────────────────────────────────────────────────────────────────
+  ✗  COLUMBIA (2057)
+  ✗  BRÚARJÖKULL
+  ✗  EYJABAKKAJÖKULL
+  ✗  HOFSJÖKULL E
+  ✗  HOFSJÖKULL N
+  ✗  HOFSJÖKULL SW
+  ✗  TUNGNÁRJÖKULL
+  ✗  AUSTRE BROEGGERBREEN
+  ✗  MIDTRE LOVÉNBREEN
+  ✗  AALFOTBREEN
+  ✗  REMBESDALSKAAKA
+  ✗  MARMAGLACIÄREN
+  ✗  RABOTS GLACIÄR
+  ✗  STORGLACIÄREN
+  ✗  JAMTALFERNER
+  ✗  CARESÈR
+  ✗  LEVIY AKTRU
+  ✗  GOLUBIN
+  ✗  KARA-BATKAK
+  ✗  TS. TUYUKSUYSKIY
+  ✗  URUMQI GLACIER NO. 1
+  ✗  ZONGO
+  ✗  ECHAURREN NORTE
+
+  Tip: unmatched names are likely stored differently in GLIMS.
+  Try searching glims.org/maps/glims for the correct glac_name.
+
+──────────────────────────────────────────────────────────────────
+  OUTPUT FILES
+──────────────────────────────────────────────────────────────────
+  ref_glaciers_full.csv    — all polygon records (722 rows)
+  ref_glaciers_latest.csv  — one row per glacier (109 rows)
+  ref_glaciers.sqlite      — SQLite, 4 tables
+  match_report.txt         — this file
+
+──────────────────────────────────────────────────────────────────
+  QUICK QUERY EXAMPLES (SQLite)
+──────────────────────────────────────────────────────────────────
+
+  -- All records for a specific glacier
+  SELECT * FROM glims_all WHERE _ref_name = 'STORGLACIÄREN';
+
+  -- Latest outline per glacier with area
+  SELECT _ref_name, glac_id, src_date, area, min_elev, max_elev
+  FROM glims_latest ORDER BY area DESC;
+
+  -- Glaciers with most observations
+  SELECT _ref_name, COUNT(*) as n_obs
+  FROM glims_all GROUP BY _ref_name ORDER BY n_obs DESC;
+
+  -- Year coverage per glacier
+  SELECT _ref_name, MIN(_year) as first, MAX(_year) as last,
+         MAX(_year)-MIN(_year) as span, COUNT(*) as n_obs
+  FROM glims_all WHERE _year IS NOT NULL
+  GROUP BY _ref_name ORDER BY span DESC;
+
+  -- Check match log
+  SELECT name, strategy, rows FROM match_log ORDER BY rows DESC;
+
+==================================================================
