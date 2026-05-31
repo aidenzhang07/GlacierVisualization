@@ -38,12 +38,12 @@ _GV_ROOT    = r"C:\Users\aiden\.git\GlacierVisualization"
 parser = argparse.ArgumentParser(description="Convert GLIMS shapefiles (N+S) to GeoJSON")
 parser.add_argument("--north", default=os.path.join(
     _GV_ROOT,
-    "NSIDC-0272_glims_db_north_20260505_v01.0",
-    "glims_download_35490"))
+    "local-data",
+    "glims_download_north"))
 parser.add_argument("--south", default=os.path.join(
     _GV_ROOT,
-    "NSIDC-0272_glims_db_south_20260505_v01.0",
-    "glims_download_40252"))
+    "local-data",
+    "glims_download_south"))
 parser.add_argument("--out",       default=os.path.join(_SCRIPT_DIR, "geojson_output"))
 parser.add_argument("--simplify",  type=float, default=0.0)
 parser.add_argument("--sample",    type=int,   default=None)
