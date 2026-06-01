@@ -94,3 +94,9 @@ Then delete `glacier.db` and restart the app to reload with fresh data.
 | Frontend   | HTML + CSS + JS    |
 | Chart      | Chart.js           |
 | Fonts      | Google Fonts       |
+
+
+## Useful Prep commands
+
+- python .\split_glaciers.py .\static\historical\glaciers_current_historical.geojson glacier_data/
+- python .\filter_glaciers.py .\static\named.geojson named_gt_0-1.geojson --query "area=0.0 || area>0.1" --stream                

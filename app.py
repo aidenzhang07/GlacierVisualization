@@ -3,6 +3,7 @@ import sqlite3
 import os
 import threading
 import re
+import json
 
 app = Flask(__name__)
 DB_PATH = "glacier.db"
@@ -21,6 +22,7 @@ KNOWN_GLACIERS = {
         "country": "Canada",
         "description": "The Athabasca Glacier is a rapidly retreating glacier in the Canadian Rockies.",
         "bbox": [-117.29, 52.17, -117.15, 52.26],
+        "glacier_id": "G242719E52168N",
     },
     "Rhône": {
         "latitude": 46.5419,
@@ -28,6 +30,7 @@ KNOWN_GLACIERS = {
         "country": "Switzerland",
         "description": "The Rhône Glacier feeds the Rhône River and has lost significant mass over the last decades.",
         "bbox": [8.37, 46.50, 8.52, 46.58],
+        "glacier_id": "G008398E46623N",
     },
     "Perito Moreno": {
         "latitude": -50.4960,
@@ -35,6 +38,7 @@ KNOWN_GLACIERS = {
         "country": "Argentina",
         "description": "Perito Moreno is one of the few Patagonian glaciers that is still advancing, though it is thinning.",
         "bbox": [-73.13, -50.53, -72.98, -50.44],
+        "glacier_id": "G286789E50565S",
     },
     # Mount Rainier as a glacier entry for 3D viewing
     "Mt Rainier": {
@@ -43,8 +47,34 @@ KNOWN_GLACIERS = {
         "country": "USA",
         "description": "Mount Rainier hosts 25+ named glaciers — the most heavily glaciated peak in the contiguous US.",
         "bbox": [-121.85, 46.80, -121.65, 46.92],
+        "glacier_id": None,  # No specific glacier ID for Mt Rainier as a whole
     },
 }
+
+# Map glacier names to their glacier IDs for highlighting
+GLACIER_ID_MAPPING = {
+    "Athabasca": "G242719E52168N",
+    "Rhône": "G008398E46623N",
+    "Perito Moreno": "G286789E50565S",
+}
+
+GLACIER_MANIFEST_PATH = os.path.join(os.path.dirname(__file__), "glacier_data", "manifest.json")
+
+
+def load_glacier_manifest():
+    if not os.path.exists(GLACIER_MANIFEST_PATH):
+        return {"glaciers": {}}
+    with open(GLACIER_MANIFEST_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+GLACIER_MANIFEST = load_glacier_manifest()
+GLACIER_IDS = set(GLACIER_MANIFEST.get("glaciers", {}).keys())
+
+
+def get_glacier_manifest_entry(glac_id: str):
+    return GLACIER_MANIFEST.get("glaciers", {}).get(glac_id)
+
 
 def init_db():
     """Create the database and seed it with sample glacier data."""
@@ -162,6 +192,76 @@ def glacier_detail(glacier_name):
         glacier_info=glacier_info
     )
 
+
+@app.route("/api/glacier-manifest")
+def glacier_manifest_api():
+    # Return ALL glacier IDs from the manifest (glaciers with multiple observations)
+    # These should be highlighted in magenta on the map
+    import sys
+    print(f"DEBUG: Returning {len(GLACIER_IDS)} glacier IDs from manifest", file=sys.stderr)
+    
+    # Return all glacier IDs sorted
+    return jsonify({"glacier_ids": sorted(list(GLACIER_IDS))})
+
+@app.route("/api/highlighted-glaciers-geojson")
+def highlighted_glaciers_geojson():
+    """Return GeoJSON for only the highlighted glaciers"""
+    features = []
+    
+    for glacier_id in GLACIER_ID_MAPPING.values():
+        if not glacier_id:
+            continue
+            
+        # Get the manifest entry
+        entry = get_glacier_manifest_entry(glacier_id)
+        if not entry:
+            continue
+            
+        # Load the individual glacier GeoJSON file
+        file_path = os.path.join(os.path.dirname(__file__), "glacier_data", entry["path"])
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    glacier_data = json.load(f)
+                    if glacier_data.get('features'):
+                        features.extend(glacier_data['features'])
+            except Exception as e:
+                print(f"Error loading {file_path}: {e}", file=sys.stderr)
+    
+    return jsonify({
+        "type": "FeatureCollection",
+        "features": features
+    })
+
+
+@app.route("/api/glacier-transition-data/<glac_id>")
+def glacier_transition_data(glac_id):
+    entry = get_glacier_manifest_entry(glac_id)
+    if not entry:
+        return jsonify({"error": "Glacier not found"}), 404
+
+    file_path = os.path.join(os.path.dirname(__file__), "glacier_data", entry["path"])
+    if not os.path.exists(file_path):
+        return jsonify({"error": "Glacier data file missing"}), 404
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    years = set()
+    for feature in data.get("features", []):
+        src_date = feature.get("properties", {}).get("src_date")
+        if isinstance(src_date, str) and len(src_date) >= 4:
+            years.add(src_date[:4])
+
+    data["available_years"] = sorted(years)
+    return jsonify(data)
+
+
+@app.route("/glacier-transition/<glac_id>")
+def glacier_transition(glac_id):
+    if glac_id not in GLACIER_IDS:
+        abort(404)
+    return render_template("transition.html", glac_id=glac_id)
 
 
 # ── GeoTIFF 3D viewer (standalone page) ──────────────────────────────
