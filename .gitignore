@@ -2,3 +2,6 @@ tifcache/*
 misc/*
 local-data/*
 *.log
+.venv/*
+.env/*
+*.pyc
