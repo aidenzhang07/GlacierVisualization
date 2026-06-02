@@ -4,4 +4,4 @@ local-data/*
 *.log
 .venv/*
 *.pyc
-secretes/*
+secrets/*
