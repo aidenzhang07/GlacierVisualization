@@ -4,3 +4,7 @@ rasterio
 numpy
 pillow
 scikit-image
+earthengine-api
+geemap
+geedim
+python-dotenv
