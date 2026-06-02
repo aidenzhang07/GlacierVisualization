@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GlacierIQ</title>
+  <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── PALETTE (derived from photo) ──────────────────────────────
+       Rock-black  #0a0c0f    near-black, dominant
+       Deep slate  #111318    card/surface
+       Steel       #1c2028    border/subtle
+       Snow-blue   #b8cfe0    primary text
+       Ice-white   #e8f0f6    headings
+       Accent-blue #4a9eca    interactive / highlight
+       Cold sky    #2a6496    secondary accent
+       Pure white  #ffffff    hero text only
+    ──────────────────────────────────────────────────────────────── */
+    :root {
+      --bg:       #0a0c0f;
+      --surface:  #111318;
+      --border:   #1c2028;
+      --border2:  #252b35;
+      --text:     #b8cfe0;
+      --text-dim: #5a7080;
+      --head:     #e8f0f6;
+      --white:    #ffffff;
+      --accent:   #4a9eca;
+      --accent2:  #2a6496;
+      --nav-h:    56px;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── SUBTLE GRAIN OVERLAY ───────────────────────────────────── */
+    body::before {
+      content:'';
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.35;
+    }
+
+    /* ── NAV ────────────────────────────────────────────────────── */
+    .nav {
+      position: fixed; top:0; left:0; right:0; z-index:1000;
+      height: var(--nav-h);
+      background: rgba(10,12,15,0.88);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 32px;
+    }
+    .nav-brand {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1.1rem;
+      color: var(--white); text-decoration: none;
+      letter-spacing: -0.02em; margin-right: auto;
+    }
+    .nav-brand b { color: var(--accent); font-weight: 800; }
+    .nav-links { display:flex; gap:2px; list-style:none; }
+    .nav-links a {
+      display:flex; align-items:center;
+      padding: 6px 16px; border-radius: 6px;
+      font-family:'Outfit',sans-serif; font-size:13px; font-weight:500;
+      letter-spacing:0.04em; color: var(--text-dim);
+      text-decoration:none;
+      transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color:var(--head); background:rgba(255,255,255,0.04); }
+    .nav-links a.active { color:var(--accent); background:rgba(74,158,202,0.08); }
+
+    /* ── HERO ───────────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: calc(var(--nav-h) + 40px) 24px 80px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    /* cold blue radial glow — like light hitting ice */
+    .hero::after {
+      content:'';
+      position:absolute; top:-20%; left:50%; transform:translateX(-50%);
+      width:900px; height:600px; border-radius:50%;
+      background: radial-gradient(ellipse, rgba(42,100,150,0.18) 0%, transparent 70%);
+      pointer-events:none;
+    }
+
+    .hero-eyebrow {
+      font-family:'Outfit',sans-serif; font-weight:500;
+      font-size:11px; letter-spacing:0.22em; text-transform:uppercase;
+      color: var(--accent); margin-bottom:20px;
+      position:relative; z-index:1;
+    }
+
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(3rem, 8vw, 6.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      color: var(--white);
+      margin-bottom: 28px;
+      position:relative; z-index:1;
+    }
+    .hero-title .line-ice { color: var(--accent); display:block; }
+
+    .hero-desc {
+      max-width: 540px; font-size:15px; line-height:1.75;
+      color: var(--text); margin-bottom: 44px;
+      position:relative; z-index:1;
+    }
+
+    .hero-cta {
+      display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+      position:relative; z-index:1;
+    }
+
+    .btn {
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 13px 28px; border-radius: 8px;
+      font-family:'Outfit',sans-serif; font-size:13px; font-weight:500;
+      letter-spacing:0.04em; text-decoration:none;
+      transition: all 0.18s;
+      cursor:pointer; border:none;
+    }
+    .btn-primary {
+      background: var(--accent); color: #000;
+    }
+    .btn-primary:hover { background: #5db3e6; transform:translateY(-1px); }
+    .btn-ghost {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border2);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--head); background:rgba(74,158,202,0.06); }
+
+    /* ── STAT STRIP ─────────────────────────────────────────────── */
+    .stats {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+      max-width: 860px; width: calc(100% - 48px);
+      margin: 60px auto 0;
+    }
+    .stat {
+      background: var(--surface);
+      padding: 24px 22px;
+      transition: background 0.18s;
+    }
+    .stat:hover { background: #141820; }
+    .stat-n {
+      font-family:'Syne',sans-serif; font-weight:700;
+      font-size:2rem; line-height:1;
+      color: var(--head); margin-bottom:6px;
+    }
+    .stat-n b { color:var(--accent); }
+    .stat-l { font-size:11px; color:var(--text-dim); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:2px; }
+    .stat-s { font-size:11px; color: #394550; }
+
+    /* ── SCROLL HINT ─────────────────────────────────────────────── */
+    .scroll-hint {
+      position:absolute; bottom:32px; left:50%; transform:translateX(-50%);
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      font-size:10px; letter-spacing:0.14em; text-transform:uppercase;
+      color:var(--text-dim); z-index:1;
+      animation: bob 2.4s ease-in-out infinite;
+    }
+    .scroll-hint::after {
+      content:''; display:block; width:1px; height:32px;
+      background: linear-gradient(to bottom, var(--border2), transparent);
+    }
+    @keyframes bob {
+      0%,100% { transform:translateX(-50%) translateY(0); }
+      50% { transform:translateX(-50%) translateY(6px); }
+    }
+
+    /* ── FEATURE SECTION ────────────────────────────────────────── */
+    .features {
+      max-width: 1060px; margin: 100px auto; padding: 0 24px;
+    }
+    .section-label {
+      font-size:11px; letter-spacing:0.2em; text-transform:uppercase;
+      color:var(--accent); margin-bottom:14px; font-weight:500;
+    }
+    .section-title {
+      font-family:'Syne',sans-serif; font-weight:700;
+      font-size: clamp(1.8rem,4vw,2.8rem); line-height:1.1;
+      letter-spacing:-0.03em; color:var(--head); margin-bottom:56px;
+      max-width:560px;
+    }
+    .feature-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1px; background:var(--border); border-radius:14px; overflow:hidden; }
+    .feature {
+      background:var(--surface); padding:32px 28px;
+      transition:background 0.18s;
+    }
+    .feature:hover { background:#141820; }
+    .feature-icon {
+      width:40px; height:40px; border-radius:8px;
+      background:rgba(74,158,202,0.10);
+      border:1px solid rgba(74,158,202,0.15);
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px; margin-bottom:20px;
+    }
+    .feature h3 {
+      font-family:'Syne',sans-serif; font-size:15px; font-weight:600;
+      color:var(--head); margin-bottom:10px; letter-spacing:-0.01em;
+    }
+    .feature p { font-size:13px; line-height:1.75; color:var(--text-dim); }
+
+    /* ── FOOTER ─────────────────────────────────────────────────── */
+    footer {
+      border-top:1px solid var(--border);
+      padding:28px 32px;
+      display:flex; justify-content:space-between; align-items:center;
+      flex-wrap:wrap; gap:12px;
+      font-size:12px; color:var(--text-dim);
+    }
+    footer a { color:var(--text-dim); text-decoration:none; }
+    footer a:hover { color:var(--accent); }
+
+    /* ── FADE-IN ─────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(24px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.7s ease both; }
+    .delay-1 { animation-delay:0.1s; }
+    .delay-2 { animation-delay:0.2s; }
+    .delay-3 { animation-delay:0.35s; }
+    .delay-4 { animation-delay:0.5s; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="/"><b>Glacier</b>IQ</a>
+  <ul class="nav-links">
+    <li><a href="/"      class="active">Home</a></li>
+    <li><a href="/map">Map</a></li>
+    <li><a href="/about">About</a></li>
+  </ul>
+</nav>
+
+<section class="hero">
+  <p class="hero-eyebrow fade-up">Climate data visualization</p>
+  <h1 class="hero-title fade-up delay-1">
+    Every glacier.<br>
+    <span class="line-ice">Every decade.</span>
+  </h1>
+  <p class="hero-desc fade-up delay-2">
+    GlacierIQ unifies 50 years of global ice data into one interactive platform —
+    GLIMS outlines, WGMS mass balance records, GlaThiDa thickness, and NASA satellite imagery.
+  </p>
+  <div class="hero-cta fade-up delay-3">
+    <a class="btn btn-primary" href="/map">Open the map →</a>
+    <a class="btn btn-ghost" href="/about">About this project</a>
+  </div>
+  <span class="scroll-hint">scroll</span>
+</section>
+
+<div class="stats fade-up delay-4">
+  <div class="stat">
+    <div class="stat-l">Glacier outlines</div>
+    <div class="stat-n"><b>1M</b>+</div>
+    <div class="stat-s">GLIMS polygons</div>
+  </div>
+  <div class="stat">
+    <div class="stat-l">Reference glaciers</div>
+    <div class="stat-n">62</div>
+    <div class="stat-s">WGMS monitored</div>
+  </div>
+  <div class="stat">
+    <div class="stat-l">Satellite record</div>
+    <div class="stat-n">40<b>+</b></div>
+    <div class="stat-s">years Landsat / Sentinel</div>
+  </div>
+  <div class="stat">
+    <div class="stat-l">Annual ice loss</div>
+    <div class="stat-n">267</div>
+    <div class="stat-s">billion tons / year</div>
+  </div>
+  <div class="stat">
+    <div class="stat-l">Thickness pts</div>
+    <div class="stat-n">3.9<b>M</b></div>
+    <div class="stat-s">GlaThiDa radar obs</div>
+  </div>
+</div>
+
+<section class="features">
+  <p class="section-label">Platform features</p>
+  <h2 class="section-title">Built from the science up.</h2>
+  <div class="feature-grid">
+    <div class="feature">
+      <div class="feature-icon">🗺</div>
+      <h3>Interactive world map</h3>
+      <p>215,000 glacier outlines rendered on a full-screen Leaflet map with satellite, OSM, and topo base layers. Click any polygon for its full record.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📅</div>
+      <h3>2D time-slider</h3>
+      <p>Step through a glacier's GLIMS polygon observations year by year. Watch the outline contract over decades on a live satellite base map.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🏔</div>
+      <h3>3D terrain viewer</h3>
+      <p>Real Landsat and Sentinel-2 imagery draped over elevation-displaced terrain. Orbit, zoom, and play through 40 years of annual composites.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📊</div>
+      <h3>Mass balance charts</h3>
+      <p>Annual accumulation vs ablation bars, cumulative loss lines, decadal averages, and acceleration curves for all 62 WGMS reference glaciers.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔬</div>
+      <h3>Unified data model</h3>
+      <p>GLIMS, WGMS, GlaThiDa, and ITS_LIVE linked by glacier ID. Cross-database identifiers surfaced on every detail page.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📡</div>
+      <h3>Live satellite fetch</h3>
+      <p>Google Earth Engine integration generates cloud-free annual composites on demand for any glacier coordinate worldwide.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>GlacierIQ — Senior Capstone · Aiden Zhang</span>
+  <span>
+    Data: <a href="https://nsidc.org/data/nsidc-0272" target="_blank">NSIDC GLIMS</a> ·
+    <a href="https://wgms.ch" target="_blank">WGMS FoG</a> ·
+    <a href="https://its-live.jpl.nasa.gov" target="_blank">NASA ITS_LIVE</a>
+  </span>
+</footer>
+
+</body>
+</html>

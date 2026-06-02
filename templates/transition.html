@@ -1,318 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Glacier Transition · {{ glac_id }}</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GlacierIQ — Transition · {{ glac_id }}</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --deep: #071b2b;
-      --ice: #d6eef8;
-      --glacier: #d020c8;
-      --glacier-soft: #f3c0f7;
-      --panel: rgba(255,255,255,0.06);
-      --border: rgba(168,216,234,0.16);
+      --bg:       #0a0c0f;
+      --surface:  #111318;
+      --border:   #1c2028;
+      --border2:  #252b35;
+      --text:     #b8cfe0;
+      --text-dim: #5a7080;
+      --head:     #e8f0f6;
+      --white:    #ffffff;
+      --accent:   #4a9eca;
+      --nav-h:    56px;
     }
-
-    * { box-sizing: border-box; }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     body {
-      margin: 0;
-      min-height: 100vh;
-      background: radial-gradient(circle at top left, rgba(79,195,247,0.08), transparent 35%),
-                  linear-gradient(180deg, #071b2b 0%, #05121b 100%);
-      color: var(--ice);
-      font-family: 'DM Mono', monospace;
+      background:var(--bg); color:var(--text);
+      font-family:'Outfit',sans-serif; font-size:15px; min-height:100vh;
     }
 
-    header {
-      padding: 24px 24px 12px;
-      max-width: 1160px;
-      margin: 0 auto;
+    /* ── NAV ── */
+    .nav {
+      position:fixed; top:0; left:0; right:0; z-index:2000;
+      height:var(--nav-h);
+      background:rgba(10,12,15,0.94); backdrop-filter:blur(24px);
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; padding:0 32px;
+    }
+    .nav-brand {
+      font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem;
+      color:var(--white); text-decoration:none;
+      letter-spacing:-0.02em; margin-right:auto;
+    }
+    .nav-brand b { color:var(--accent); }
+    .nav-links { display:flex; gap:2px; list-style:none; }
+    .nav-links a {
+      display:flex; align-items:center; padding:6px 16px; border-radius:6px;
+      font-size:13px; font-weight:500; letter-spacing:0.04em;
+      color:var(--text-dim); text-decoration:none;
+      transition:color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color:var(--head); background:rgba(255,255,255,0.04); }
+    .nav-links a.active { color:var(--accent); background:rgba(74,158,202,0.08); }
+
+    /* ── LAYOUT ── */
+    .page { padding-top:var(--nav-h); }
+
+    .page-header {
+      max-width:1160px; margin:0 auto;
+      padding:28px 28px 16px;
+      display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;
+    }
+    .breadcrumb { font-size:12px; color:var(--text-dim); }
+    .breadcrumb a { color:var(--accent); text-decoration:none; }
+    .breadcrumb a:hover { color:var(--head); }
+    .page-title {
+      font-family:'Syne',sans-serif; font-weight:700;
+      font-size:clamp(1.4rem,3vw,2rem); letter-spacing:-0.03em;
+      color:var(--head);
     }
 
-    .breadcrumb {
-      margin-bottom: 12px;
-      font-size: 0.82rem;
-    }
-    .breadcrumb a {
-      color: #a8d8ea;
-      text-decoration: none;
-    }
-
-    h1 {
-      margin: 0 0 10px;
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 4vw, 3rem);
-      letter-spacing: -0.02em;
-    }
-
-    .subtitle {
-      max-width: 760px;
-      color: #7aafc5;
-      line-height: 1.6;
-      margin-bottom: 18px;
-    }
-
+    /* meta pills */
     .meta-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 18px;
-      padding: 0 24px;
+      max-width:1160px; margin:0 auto 16px;
+      padding:0 28px;
+      display:flex; gap:10px; flex-wrap:wrap;
     }
-
-    .meta-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 18px 20px;
+    .meta-pill {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:8px; padding:10px 16px;
+      display:flex; flex-direction:column; gap:3px;
     }
-
-    .meta-card strong {
-      display: block;
-      margin-bottom: 8px;
-      color: #b7d7f0;
-      font-size: 0.76rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+    .meta-pill strong {
+      font-size:9px; letter-spacing:0.16em; text-transform:uppercase;
+      color:var(--text-dim); font-weight:500;
     }
+    .meta-pill span { font-size:13px; color:var(--head); font-weight:500; }
 
+    /* map */
     #map {
-      width: calc(100% - 48px);
-      height: 62vh;
-      max-height: 760px;
-      margin: 0 auto 18px;
-      border-radius: 24px;
-      border: 1px solid var(--border);
-      overflow: hidden;
-      background: #07121f;
+      width:calc(100% - 56px); margin:0 auto 16px;
+      height:60vh; min-height:400px; max-height:720px;
+      border-radius:12px; border:1px solid var(--border);
+      overflow:hidden; background:#080a0d;
+      display:block;
     }
 
+    /* controls bar */
     .controls {
-      max-width: 1160px;
-      margin: 0 auto 32px;
-      padding: 0 24px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
+      max-width:1160px; margin:0 auto 16px; padding:0 28px;
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    }
+    .ctrl-btn {
+      background:var(--surface); border:1px solid var(--border2);
+      color:var(--text); font-family:'Outfit',sans-serif;
+      font-size:12px; font-weight:500;
+      padding:8px 18px; border-radius:7px; cursor:pointer;
+      transition:all 0.15s; white-space:nowrap;
+    }
+    .ctrl-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+    .ctrl-btn:disabled { opacity:0.3; cursor:not-allowed; }
+    .ctrl-btn.playing { border-color:var(--accent); color:var(--accent); background:rgba(74,158,202,0.08); }
+
+    input[type=range] {
+      flex:1; min-width:140px; height:28px;
+      accent-color:var(--accent); background:transparent; border:none;
+    }
+    .year-badge {
+      font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem;
+      color:var(--head); min-width:52px; text-align:center;
     }
 
-    .controls button,
-    .controls input[type=range] {
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      color: var(--ice);
-      font-family: inherit;
+    /* status bar */
+    .status-bar {
+      max-width:1160px; margin:0 auto 32px; padding:0 28px;
+    }
+    .status-inner {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:8px; padding:11px 16px;
+      font-size:12px; color:var(--text-dim); line-height:1.5;
     }
 
-    .controls button {
-      padding: 12px 18px;
-      cursor: pointer;
-      transition: background 0.2s ease;
+    /* leaflet dark overrides */
+    .leaflet-popup-content-wrapper {
+      background:rgba(10,12,15,0.97) !important; color:var(--head) !important;
+      border-radius:10px !important; border:1px solid var(--border2) !important;
+      font-family:'Outfit',sans-serif !important;
     }
-
-    .controls button:hover {
-      background: rgba(255,255,255,0.12);
+    .leaflet-popup-tip { background:rgba(10,12,15,0.97) !important; }
+    .leaflet-control-attribution {
+      background:rgba(10,12,15,0.7) !important; color:var(--text-dim) !important;
+      font-size:10px !important;
     }
-
-    .controls input[type=range] {
-      flex: 1;
-      min-width: 200px;
-      height: 34px;
-      accent-color: #d020c8;
+    .leaflet-control-scale-line {
+      background:rgba(10,12,15,0.75) !important; border-color:var(--border2) !important;
+      color:var(--text-dim) !important; font-family:'Outfit',sans-serif !important; font-size:10px !important;
     }
-
-    .status {
-      margin: 0 auto 32px;
-      max-width: 1160px;
-      padding: 18px 24px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 18px;
-      color: #cfe7ff;
-      font-size: 0.95rem;
-      line-height: 1.5;
+    .leaflet-control-zoom a {
+      background:rgba(10,12,15,0.9) !important; color:var(--text) !important;
+      border-color:var(--border2) !important;
     }
-
-    a.page-link {
-      color: #8cd3ff;
-      text-decoration: none;
-      border-bottom: 1px solid rgba(140,211,255,0.4);
-    }
+    .leaflet-control-zoom a:hover { background:rgba(74,158,202,0.2) !important; color:var(--accent) !important; }
+    .leaflet-control-zoom a:first-child { border-radius:8px 8px 0 0 !important; }
+    .leaflet-control-zoom a:last-child  { border-radius:0 0 8px 8px !important; }
   </style>
 </head>
 <body>
-  <header>
-    <div class="breadcrumb"><a href="/">← Back to glacier map</a></div>
-    <h1>Glacier transition view</h1>
-    <p class="subtitle">This page shows a fixed satellite base map and then renders the glacier's actual polygon observations across available years.</p>
-  </header>
+
+<nav class="nav">
+  <a class="nav-brand" href="/"><b>Glacier</b>IQ</a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/map">Map</a></li>
+    <li><a href="/about">About</a></li>
+  </ul>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <span class="breadcrumb"><a href="/map">← Map</a></span>
+    <h1 class="page-title">Glacier Transition View</h1>
+  </div>
 
   <div class="meta-row">
-    <div class="meta-card">
+    <div class="meta-pill">
       <strong>Glacier ID</strong>
-      <div id="glacierId">{{ glac_id }}</div>
+      <span>{{ glac_id }}</span>
     </div>
-    <div class="meta-card">
-      <strong>Selected year</strong>
-      <div id="yearLabel">Loading…</div>
+    <div class="meta-pill">
+      <strong>Year</strong>
+      <span id="yearDisplay">—</span>
     </div>
-    <div class="meta-card">
-      <strong>Available years</strong>
-      <div id="yearCount">0</div>
+    <div class="meta-pill">
+      <strong>Observations</strong>
+      <span id="yearCount">—</span>
+    </div>
+    <div class="meta-pill">
+      <strong>Span</strong>
+      <span id="timelineText">—</span>
     </div>
   </div>
 
   <div id="map"></div>
 
   <div class="controls">
-    <button id="btnPrev" disabled>◀ Previous</button>
-    <button id="btnPlay" disabled>▶ Play</button>
-    <input id="yearSlider" type="range" min="0" max="0" step="1" value="0" disabled />
-    <span id="timelineText">Loading years...</span>
+    <button class="ctrl-btn" id="btnPrev" disabled>◀ Prev</button>
+    <button class="ctrl-btn" id="btnPlay" disabled>▶ Play</button>
+    <input type="range" id="yearSlider" min="0" max="0" value="0" step="1" disabled/>
+    <span class="year-badge" id="yearBadge">—</span>
+    <button class="ctrl-btn" id="btnNext" disabled>Next ▶</button>
   </div>
 
-  <div class="status" id="status">Fetching glacier polygon timeline...</div>
+  <div class="status-bar">
+    <div class="status-inner" id="status">Fetching glacier polygon timeline…</div>
+  </div>
+</div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    const glacierId = {{ glac_id | tojson }};
-    const yearLabel = document.getElementById('yearLabel');
-    const yearCountEl = document.getElementById('yearCount');
-    const statusEl = document.getElementById('status');
-    const yearSlider = document.getElementById('yearSlider');
-    const btnPrev = document.getElementById('btnPrev');
-    const btnPlay = document.getElementById('btnPlay');
-    const timelineText = document.getElementById('timelineText');
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  const glacierId   = {{ glac_id | tojson }};
+  const yearDisplay = document.getElementById('yearDisplay');
+  const yearCount   = document.getElementById('yearCount');
+  const timelineText= document.getElementById('timelineText');
+  const yearBadge   = document.getElementById('yearBadge');
+  const statusEl    = document.getElementById('status');
+  const yearSlider  = document.getElementById('yearSlider');
+  const btnPrev     = document.getElementById('btnPrev');
+  const btnNext     = document.getElementById('btnNext');
+  const btnPlay     = document.getElementById('btnPlay');
 
-    const map = L.map('map', {
-      preferCanvas: true,
-      zoomControl: false,
-      scrollWheelZoom: false,
-      doubleClickZoom: false,
-      attributionControl: true,
+  const map = L.map('map', { preferCanvas:true, zoomControl:true, scrollWheelZoom:true });
+
+  L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { attribution:'&copy; Esri, Maxar, Earthstar Geographics', maxZoom:18 }
+  ).addTo(map);
+
+  L.control.scale({ position:'bottomleft', imperial:true, metric:true }).addTo(map);
+
+  const polyLayer = L.layerGroup().addTo(map);
+  let years=[], groups={}, idx=0, playing=null, bounds=null;
+
+  function sync() {
+    const n = years.length;
+    yearSlider.disabled = n<=1; btnPlay.disabled = n<=1;
+    btnPrev.disabled = idx===0; btnNext.disabled = idx===n-1;
+    yearSlider.max = Math.max(0,n-1); yearSlider.value = idx;
+    const y = years[idx]||'—';
+    yearDisplay.textContent = y; yearBadge.textContent = y;
+    yearCount.textContent   = n;
+    timelineText.textContent= n ? `${years[0]} → ${years[n-1]}` : '—';
+  }
+
+  function render(i) {
+    idx = Math.max(0, Math.min(years.length-1, i));
+    sync();
+    polyLayer.clearLayers();
+    const active = years[idx];
+    years.forEach(yr => {
+      const cur = yr===active;
+      const style = {
+        color:       cur ? '#4a9eca' : 'rgba(74,158,202,0.35)',
+        fillColor:   cur ? 'rgba(74,158,202,0.28)' : 'rgba(74,158,202,0.06)',
+        weight:      cur ? 3 : 1.2,
+        fillOpacity: cur ? 0.32 : 0.10,
+      };
+      groups[yr].forEach(f => polyLayer.addLayer(L.geoJSON(f,{style,interactive:false})));
     });
+    if (bounds) map.fitBounds(bounds, {padding:[16,16]});
+  }
 
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: '&copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community',
-      maxZoom: 18,
-    }).addTo(map);
-
-    const polygonLayer = L.layerGroup().addTo(map);
-    let years = [];
-    let yearGroups = {};
-    let currentIndex = 0;
-    let playInterval = null;
-    let boundsAll = null;
-
-    function formatTimeline() {
-      if (!years.length) return 'No years available';
-      return `${years[0]} → ${years[years.length - 1]}`;
-    }
-
-    function updateControls() {
-      yearSlider.disabled = years.length <= 1;
-      yearSlider.max = Math.max(0, years.length - 1);
-      yearSlider.value = currentIndex;
-      btnPrev.disabled = currentIndex === 0;
-      btnPlay.disabled = years.length <= 1;
-      timelineText.textContent = formatTimeline();
-      yearCountEl.textContent = years.length;
-      yearLabel.textContent = years[currentIndex] || 'N/A';
-    }
-
-    function renderYear(index) {
-      if (!years.length) return;
-      currentIndex = index;
-      updateControls();
-      polygonLayer.clearLayers();
-      const highlightYear = years[index];
-
-      years.forEach((year, idx) => {
-        const isCurrent = year === highlightYear;
-        const style = {
-          color: isCurrent ? '#d020c8' : '#f8a0f4',
-          fillColor: isCurrent ? 'rgba(208,32,200,0.32)' : 'rgba(208,32,200,0.12)',
-          weight: isCurrent ? 4 : 2,
-          fillOpacity: isCurrent ? 0.34 : 0.18,
-        };
-
-        yearGroups[year].forEach(feature => {
-          polygonLayer.addLayer(L.geoJSON(feature, {
-            style,
-            interactive: false,
-          }));
-        });
+  async function load() {
+    try {
+      const r = await fetch(`/api/glacier-transition-data/${encodeURIComponent(glacierId)}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      const feats = d.features||[];
+      if (!feats.length) { statusEl.textContent='No polygon features found for this glacier ID.'; return; }
+      feats.forEach(f => {
+        const yr = (f.properties?.src_date||'').slice(0,4)||'unknown';
+        groups[yr] = groups[yr]||[]; groups[yr].push(f);
       });
-
-      if (boundsAll) {
-        map.fitBounds(boundsAll, { padding: [14, 14] });
-      }
+      years = Object.keys(groups).sort((a,b)=>+a-+b);
+      bounds = L.geoJSON(feats).getBounds();
+      render(0);
+      statusEl.textContent = `${feats.length} polygon records across ${years.length} observation year(s).`;
+    } catch(e) {
+      statusEl.textContent = `Failed to load: ${e.message}`;
     }
+  }
 
-    async function fetchTransitionData() {
-      try {
-        const res = await fetch(`/api/glacier-transition-data/${encodeURIComponent(glacierId)}`);
-        if (!res.ok) {
-          throw new Error(`Server returned ${res.status}`);
-        }
-        const data = await res.json();
-        const features = data.features || [];
-        if (!features.length) {
-          statusEl.textContent = 'No glacier polygon features available for this ID.';
-          return;
-        }
-
-        features.forEach(feature => {
-          const srcDate = feature.properties?.src_date || '';
-          const year = srcDate.slice(0, 4) || 'unknown';
-          yearGroups[year] = yearGroups[year] || [];
-          yearGroups[year].push(feature);
-        });
-
-        years = Object.keys(yearGroups).sort((a, b) => Number(a) - Number(b));
-        if (!years.length) {
-          statusEl.textContent = 'No dated features available in glacier polygon data.';
-          return;
-        }
-
-        boundsAll = L.geoJSON(features).getBounds();
-        renderYear(0);
-        statusEl.textContent = `Loaded ${features.length} polygon features for ${glacierId}.`;
-      } catch (err) {
-        statusEl.textContent = `Failed to load glacier data: ${err.message}`;
-        console.error(err);
-      }
+  btnPrev.addEventListener('click', ()=>render(idx-1));
+  btnNext.addEventListener('click', ()=>render(idx+1));
+  yearSlider.addEventListener('input', e=>render(+e.target.value));
+  btnPlay.addEventListener('click', () => {
+    if (playing) {
+      clearInterval(playing); playing=null;
+      btnPlay.textContent='▶ Play'; btnPlay.classList.remove('playing');
+    } else {
+      btnPlay.textContent='⏸ Pause'; btnPlay.classList.add('playing');
+      playing = setInterval(()=>render((idx+1)%years.length), 1100);
     }
+  });
 
-    btnPrev.addEventListener('click', () => {
-      renderYear(Math.max(0, currentIndex - 1));
-    });
-
-    btnPlay.addEventListener('click', () => {
-      if (playInterval) {
-        clearInterval(playInterval);
-        playInterval = null;
-        btnPlay.textContent = '▶ Play';
-        return;
-      }
-      btnPlay.textContent = '⏸ Pause';
-      playInterval = setInterval(() => {
-        const nextIndex = (currentIndex + 1) % years.length;
-        renderYear(nextIndex);
-      }, 1100);
-    });
-
-    yearSlider.addEventListener('input', (event) => {
-      renderYear(Number(event.target.value));
-    });
-
-    fetchTransitionData();
-  </script>
+  load();
+</script>
 </body>
 </html>

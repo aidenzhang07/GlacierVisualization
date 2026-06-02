@@ -3,285 +3,194 @@
 <head>
   <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon">
   <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Glacier Map Explorer</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <title>GlacierIQ — Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --ice:     #d6eef8;
-      --deep:    #0a2a3a;
-      --glacier: #2e8cb5;
-      --melt:    #e06c4a;
-      --frost:   #a8d8ea;
-      --text:    #cde8f5;
+      --bg:       #0a0c0f;
+      --surface:  #111318;
+      --border:   #1c2028;
+      --border2:  #252b35;
+      --text:     #b8cfe0;
+      --text-dim: #5a7080;
+      --head:     #e8f0f6;
+      --white:    #ffffff;
+      --accent:   #4a9eca;
+      --nav-h:    56px;
     }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; overflow:hidden; }
     body {
-      background-color: var(--deep);
-      background-image:
-        radial-gradient(ellipse at 20% 10%, rgba(46,140,181,0.18) 0%, transparent 55%),
-        radial-gradient(ellipse at 80% 90%, rgba(10,42,58,0.9) 0%, transparent 60%);
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px 60px;
+      background:var(--bg); color:var(--text);
+      font-family:'Outfit',sans-serif;
     }
 
-    header {
-      text-align: center;
-      margin-bottom: 36px;
-      animation: fadeDown 0.8s ease both;
+    /* ── NAV ── */
+    .nav {
+      position:fixed; top:0; left:0; right:0; z-index:2000;
+      height:var(--nav-h);
+      background:rgba(10,12,15,0.94); backdrop-filter:blur(24px);
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; padding:0 32px;
     }
-
-    .eyebrow {
-      font-size: 0.7rem;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: var(--glacier);
-      margin-bottom: 10px;
+    .nav-brand {
+      font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem;
+      color:var(--white); text-decoration:none;
+      letter-spacing:-0.02em; margin-right:auto;
     }
-
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 5vw, 3.6rem);
-      font-weight: 700;
-      color: var(--ice);
-      line-height: 1.1;
-      margin-bottom: 12px;
+    .nav-brand b { color:var(--accent); }
+    .nav-links { display:flex; gap:2px; list-style:none; }
+    .nav-links a {
+      display:flex; align-items:center; padding:6px 16px; border-radius:6px;
+      font-size:13px; font-weight:500; letter-spacing:0.04em;
+      color:var(--text-dim); text-decoration:none;
+      transition:color 0.15s, background 0.15s;
     }
+    .nav-links a:hover { color:var(--head); background:rgba(255,255,255,0.04); }
+    .nav-links a.active { color:var(--accent); background:rgba(74,158,202,0.08); }
 
-    h1 span { color: var(--glacier); }
-
-    .subtitle {
-      font-size: 0.78rem;
-      color: #7aafc5;
-      letter-spacing: 0.05em;
-    }
-
-    .chart-card {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      animation: fadeUp 0.8s 0.4s ease both;
-    }
-
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .chart-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.1rem;
-      color: var(--ice);
-    }
-
-    .legend {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.7rem;
-      letter-spacing: 0.08em;
-    }
-
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-
+    /* ── FULL-SCREEN MAP ── */
     #map {
-      width: 90vw;
-      min-height: 75vh;
-      border-radius: 16px;
-      border: 1px solid rgba(168,216,234,0.16);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+      position:fixed;
+      top:var(--nav-h); left:0; right:0; bottom:0;
+      z-index:1;
     }
 
-    .glacier-list {
-      width: 100%;
-      max-width: 960px;
-      display: grid;
-      gap: 18px;
-      margin-top: 24px;
-      animation: fadeUp 0.8s 0.6s ease both;
-    }
-
-    .glacier-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(168,216,234,0.12);
-      border-radius: 16px;
-      padding: 22px 26px;
-      display: grid;
-      gap: 10px;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-    }
-
-    .glacier-card h3 {
-      margin-bottom: 6px;
-      font-size: 1rem;
-      color: var(--ice);
-    }
-
-    .glacier-card p {
-      color: #bfdcea;
-      line-height: 1.6;
-      font-size: 0.92rem;
-    }
-
-    .glacier-card a {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 18px;
-      background: rgba(46,140,181,0.12);
-      border: 1px solid rgba(46,140,181,0.22);
-      border-radius: 999px;
-      color: #d6eef8;
-      text-decoration: none;
-      font-size: 0.85rem;
-      transition: background 0.2s ease;
-    }
-
-    .glacier-card a:hover {
-      background: rgba(46,140,181,0.2);
-    }
-
+    /* ── LEAFLET DARK THEME ── */
     .leaflet-popup-content-wrapper {
-      background: rgba(10,42,58,0.95);
-      color: #d6eef8;
-      border-radius: 14px;
-      border: 1px solid rgba(46,140,181,0.2);
+      background:rgba(10,12,15,0.97) !important;
+      color:var(--head) !important;
+      border-radius:10px !important;
+      border:1px solid var(--border2) !important;
+      box-shadow:0 8px 32px rgba(0,0,0,0.6) !important;
+      font-family:'Outfit',sans-serif !important;
     }
-
-    .leaflet-popup-content a {
-      color: #a8d8ea;
-      text-decoration: underline;
+    .leaflet-popup-tip { background:rgba(10,12,15,0.97) !important; }
+    .leaflet-popup-content {
+      font-size:13px !important; line-height:1.65 !important;
+      color:var(--text) !important;
     }
+    .leaflet-popup-content strong { color:var(--head) !important; font-weight:600; }
+    .leaflet-popup-content a { color:var(--accent) !important; }
+    .leaflet-popup-close-button { color:var(--text-dim) !important; }
 
     .leaflet-control-attribution {
-      color: rgba(255,255,255,0.7) !important;
+      background:rgba(10,12,15,0.7) !important;
+      color:var(--text-dim) !important;
+      font-size:10px !important;
+      font-family:'Outfit',sans-serif !important;
+    }
+    .leaflet-control-attribution a { color:var(--text-dim) !important; }
+
+    .leaflet-control-scale-line {
+      background:rgba(10,12,15,0.75) !important;
+      border-color:var(--border2) !important;
+      color:var(--text-dim) !important;
+      font-family:'Outfit',sans-serif !important;
+      font-size:10px !important;
     }
 
-    @keyframes fadeDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to   { opacity: 1; transform: translateY(0); }
+    .leaflet-control-layers {
+      background:rgba(10,12,15,0.95) !important;
+      border:1px solid var(--border2) !important;
+      border-radius:10px !important;
+      color:var(--head) !important;
+      font-family:'Outfit',sans-serif !important;
+      font-size:13px !important;
+      box-shadow:0 4px 24px rgba(0,0,0,0.5) !important;
+    }
+    .leaflet-control-layers-expanded { padding:12px 16px !important; }
+    .leaflet-control-layers label { color:var(--text) !important; font-size:13px !important; display:flex; align-items:center; gap:8px; padding:3px 0; }
+    .leaflet-control-layers-separator { border-color:var(--border) !important; margin:8px 0 !important; }
+    .leaflet-control-layers-toggle {
+      background-color:rgba(10,12,15,0.9) !important;
+      border-radius:8px !important;
     }
 
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
+    .leaflet-control-zoom {
+      border:none !important;
+      box-shadow:0 2px 12px rgba(0,0,0,0.4) !important;
     }
+    .leaflet-control-zoom a {
+      background:rgba(10,12,15,0.9) !important;
+      color:var(--text) !important;
+      border-color:var(--border2) !important;
+      font-size:16px !important;
+      width:32px !important; height:32px !important; line-height:32px !important;
+    }
+    .leaflet-control-zoom a:first-child { border-radius:8px 8px 0 0 !important; }
+    .leaflet-control-zoom a:last-child  { border-radius:0 0 8px 8px !important; }
+    .leaflet-control-zoom a:hover { background:rgba(74,158,202,0.2) !important; color:var(--accent) !important; }
 
-    /* ── Modal overlay styles ── */
+    /* ── MODAL ── */
     #modalOverlay {
-      display: none; position: fixed; inset: 0; z-index: 1000;
-      background: rgba(5, 15, 25, 0.92); backdrop-filter: blur(6px);
-      justify-content: center; align-items: center;
+      display:none; position:fixed; inset:0; z-index:3000;
+      background:rgba(5,8,12,0.88); backdrop-filter:blur(10px);
+      justify-content:center; align-items:center;
     }
-    #modalOverlay.active { display: flex; }
-    #modalOverlay .modal-panel {
-      background: var(--deep); border: 1px solid rgba(168,216,234,0.2);
-      border-radius: 20px; width: 95vw; max-width: 960px; height: 85vh;
-      display: flex; flex-direction: column; overflow: hidden;
-      box-shadow: 0 0 60px rgba(46,140,181,0.15);
+    #modalOverlay.active { display:flex; }
+    .modal-panel {
+      background:var(--surface); border:1px solid var(--border2);
+      border-radius:14px; width:95vw; max-width:960px; height:85vh;
+      display:flex; flex-direction:column; overflow:hidden;
+      box-shadow:0 0 80px rgba(74,158,202,0.08);
     }
     .modal-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 16px 24px; border-bottom: 1px solid rgba(168,216,234,0.12);
+      display:flex; justify-content:space-between; align-items:center;
+      padding:16px 24px; border-bottom:1px solid var(--border); flex-shrink:0;
     }
     .modal-header h2 {
-      font-family: 'Playfair Display', serif; color: var(--ice); font-size: 1.2rem;
+      font-family:'Syne',sans-serif; font-weight:700;
+      font-size:15px; color:var(--head); letter-spacing:-0.01em;
     }
     .modal-close {
-      background: none; border: 1px solid rgba(255,255,255,0.2); color: var(--text);
-      font-size: 1.4rem; width: 36px; height: 36px; border-radius: 50%;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: background 0.2s;
+      background:none; border:1px solid var(--border2); color:var(--text-dim);
+      font-size:18px; width:32px; height:32px; border-radius:6px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition:all 0.15s;
     }
-    .modal-close:hover { background: rgba(255,255,255,0.1); }
-    .modal-body { flex: 1; position: relative; background: #0a1a28; }
-    .modal-controls {
-      display: flex; align-items: center; gap: 12px; padding: 12px 24px;
-      border-top: 1px solid rgba(168,216,234,0.12); flex-wrap: wrap;
-    }
-    .modal-controls label { font-size: 0.78rem; color: #7aafc5; display: flex; align-items: center; gap: 6px; }
-    .modal-controls input[type=range] { width: 160px; accent-color: #4fc3f7; }
-    .modal-controls button {
-      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
-      color: #d6eef8; padding: 6px 12px; border-radius: 6px;
-      cursor: pointer; font-size: 0.78rem; transition: background 0.2s;
-    }
-    .modal-controls button:hover { background: rgba(255,255,255,0.18); }
+    .modal-close:hover { border-color:var(--accent); color:var(--accent); }
+    .modal-body { flex:1; position:relative; background:#080a0d; min-height:0; }
     .modal-spinner {
-      position: absolute; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 16px; z-index: 20;
-      background: rgba(10,26,40,0.85);
+      position:absolute; inset:0; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:16px; z-index:20;
     }
-    .modal-spinner .spinner-ring {
-      width: 48px; height: 48px; border: 4px solid rgba(168,216,234,0.15);
-      border-top-color: #4fc3f7; border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    .spinner-ring {
+      width:40px; height:40px;
+      border:3px solid var(--border2);
+      border-top-color:var(--accent);
+      border-radius:50%; animation:spin 0.8s linear infinite;
     }
-    .modal-spinner .spinner-text { color: #a8d8ea; font-size: 0.85rem; }
-    .modal-spinner .spinner-sub { color: #5a8ca0; font-size: 0.7rem; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .glacier-card .btn-3d {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 12px 18px; background: rgba(46,140,181,0.12);
-      border: 1px solid rgba(46,140,181,0.22); border-radius: 999px;
-      color: #d6eef8; text-decoration: none; font-size: 0.85rem;
-      cursor: pointer; transition: background 0.2s ease;
-    }
-    .glacier-card .btn-3d:hover { background: rgba(46,140,181,0.22); }
-
-    
+    .spinner-text { font-size:13px; color:var(--text-dim); }
+    .spinner-sub  { font-size:11px; color:var(--text-dim); opacity:0.6; }
+    @keyframes spin { to { transform:rotate(360deg); } }
   </style>
 </head>
 <body>
 
-<header>
-  <p class="eyebrow">Climate Data Visualization</p>
-  <h1>Glacier <span>World Map</span> Interactive Explorer</h1>
-</header>
+<nav class="nav">
+  <a class="nav-brand" href="/"><b>Glacier</b>IQ</a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/map" class="active">Map</a></li>
+    <li><a href="/about">About</a></li>
+  </ul>
+</nav>
 
-<div class="chart-card">
-    <div class="chart-header">
-      <span class="chart-title">Glacier Map</span>
-    </div>
-    <div id="map"></div>
-  </div>
-<div class="glacier-list" id="glacierList"></div>
+<div id="map"></div>
 
-<!-- ── 3D Viewer Modal ── -->
+<!-- 3D MODAL -->
 <div id="modalOverlay">
   <div class="modal-panel">
     <div class="modal-header">
       <h2 id="modalTitle">3D Satellite View</h2>
       <button class="modal-close" id="modalClose">&times;</button>
     </div>
-    <div class="modal-body" id="modalBody">
+    <div class="modal-body">
       <div class="modal-spinner" id="modalSpinner">
         <div class="spinner-ring"></div>
         <div class="spinner-text">Downloading satellite imagery…</div>
@@ -294,231 +203,166 @@
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-console.log('=== SCRIPT STARTING ===');
-
-// ── 3D Modal (opens the geotiff_viewer in an iframe) ──
-async function open3DModal(glacierName) {
-  const overlay = document.getElementById('modalOverlay');
-  const spinner = document.getElementById('modalSpinner');
-  const sub = document.getElementById('spinnerSub');
-  const iframe = document.getElementById('modalIframe');
-  const title = document.getElementById('modalTitle');
-
-  title.textContent = glacierName + ' — 3D Satellite View';
-  overlay.classList.add('active');
-  spinner.style.display = 'flex';
-  iframe.style.display = 'none';
-  sub.textContent = '';
-
-  // Trigger download if needed, then load iframe
-  try {
-    let res = await fetch('/api/glacier-image/years/' + encodeURIComponent(glacierName));
-    let info = await res.json();
-    if (!info.complete) {
-      sub.textContent = 'Fetching from satellite (this may take a minute)…';
-      await fetch('/api/glacier-image/download/' + encodeURIComponent(glacierName), { method: 'POST' });
-      for (let i = 0; i < 120; i++) {
-        await new Promise(r => setTimeout(r, 2000));
-        let sr = await fetch('/api/glacier-image/status/' + encodeURIComponent(glacierName));
-        let st = await sr.json();
-        sub.textContent = (st.years_ready || []).length + ' years downloaded…';
-        if (st.complete) break;
-      }
-    }
-  } catch (e) {
-    console.error(e);
-  }
-
-  // Hide spinner, show iframe with the working geotiff_viewer page
-  spinner.style.display = 'none';
-  iframe.src = '/geotiff-viewer?glacier=' + encodeURIComponent(glacierName);
-  iframe.style.display = 'block';
-}
-
-function close3DModal() {
-  const overlay = document.getElementById('modalOverlay');
-  const iframe = document.getElementById('modalIframe');
-  overlay.classList.remove('active');
-  iframe.src = '';
-  iframe.style.display = 'none';
-}
-
-document.getElementById('modalClose').addEventListener('click', close3DModal);
-document.getElementById('modalOverlay').addEventListener('click', function(e) {
-  if (e.target === this) close3DModal();
-});
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') close3DModal(); });
-
-// ── Glacier marker data ──
 const glacierMarkers = {{ glacier_markers | tojson }};
 let highlightedGlacierIds = new Set();
 
-async function loadGlacierManifest() {
+// ── Modal ──────────────────────────────────────────────────────────────────
+async function open3DModal(name) {
+  const overlay = document.getElementById('modalOverlay');
+  const spinner = document.getElementById('modalSpinner');
+  const sub     = document.getElementById('spinnerSub');
+  const iframe  = document.getElementById('modalIframe');
+  document.getElementById('modalTitle').textContent = name + ' — 3D View';
+  overlay.classList.add('active');
+  spinner.style.display = 'flex'; iframe.style.display = 'none'; sub.textContent = '';
   try {
-    const res = await fetch('/api/glacier-manifest');
-    const data = await res.json();
-    if (Array.isArray(data.glacier_ids)) {
-      highlightedGlacierIds = new Set(data.glacier_ids);
+    let r = await fetch('/api/glacier-image/years/' + encodeURIComponent(name));
+    let d = await r.json();
+    if (!d.complete) {
+      sub.textContent = 'Fetching from satellite…';
+      await fetch('/api/glacier-image/download/' + encodeURIComponent(name), { method:'POST' });
+      for (let i=0; i<120; i++) {
+        await new Promise(r=>setTimeout(r,2000));
+        let st = await (await fetch('/api/glacier-image/status/'+encodeURIComponent(name))).json();
+        sub.textContent = (st.years_ready||[]).length + ' years ready…';
+        if (st.complete) break;
+      }
     }
-  } catch (err) {
-    console.warn('Unable to load glacier manifest', err);
+  } catch(e) { console.error(e); }
+  spinner.style.display = 'none';
+  iframe.src = '/geotiff-viewer?glacier=' + encodeURIComponent(name);
+  iframe.style.display = 'block';
+}
+function close3DModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+  const f = document.getElementById('modalIframe'); f.src=''; f.style.display='none';
+}
+document.getElementById('modalClose').addEventListener('click', close3DModal);
+document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target===e.currentTarget) close3DModal(); });
+document.addEventListener('keydown', e => { if (e.key==='Escape') close3DModal(); });
+
+// ── Map ───────────────────────────────────────────────────────────────────
+async function createMap() {
+  // load manifest
+  try {
+    const d = await (await fetch('/api/glacier-manifest')).json();
+    if (Array.isArray(d.glacier_ids)) highlightedGlacierIds = new Set(d.glacier_ids);
+  } catch(e) {}
+
+  // base layers
+  const satellite = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { attribution:'&copy; Esri, Maxar, Earthstar Geographics', maxZoom:18 }
+  );
+  const osm = L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19 }
+  );
+  // Thunderforest Landscape — replace YOUR_API_KEY at thunderforest.com (free)
+  const landscape = L.tileLayer(
+    'https://tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=YOUR_API_KEY',
+    { attribution:'&copy; <a href="https://www.thunderforest.com">Thunderforest</a>, &copy; OpenStreetMap', maxZoom:18 }
+  );
+
+  const map = L.map('map', {
+    preferCanvas:true, zoomControl:true,
+    scrollWheelZoom:true, worldCopyJump:true,
+    layers:[satellite],
+  }).setView([20,0],3);
+
+  L.control.layers(
+    { '🛰 Satellite':satellite, '🗺 Street (OSM)':osm, '⛰ Topo':landscape },
+    {},
+    { position:'topright', collapsed:true }
+  ).addTo(map);
+
+  L.control.scale({ position:'bottomleft', imperial:true, metric:true, maxWidth:140 }).addTo(map);
+
+  // GeoJSON glacier layer
+  const renderer = L.canvas({ padding:0.5 });
+
+  function shiftCoords(coords, dx) {
+    if (typeof coords[0]==='number') return [coords[0]+dx, coords[1]];
+    return coords.map(c => shiftCoords(c, dx));
   }
+  function offsetFC(fc, dx) {
+    return { type:'FeatureCollection', features: fc.features.map(f => {
+      const c = JSON.parse(JSON.stringify(f));
+      c.geometry.coordinates = shiftCoords(c.geometry.coordinates, dx);
+      return c;
+    })};
+  }
+
+  function makeLayer(geojson, interactive=true) {
+    return L.geoJSON(geojson, {
+      renderer,
+      smoothFactor:10,
+      style(f) {
+        const id   = f.properties?.glac_id;
+        const ext  = f.properties?.gone_date;
+        const hi   = id && highlightedGlacierIds.has(id);
+        return {
+          color:       ext ? '#e05050' : hi ? '#4a9eca' : '#2a6496',
+          fillColor:   ext ? 'rgba(224,80,80,0.18)' : hi ? 'rgba(74,158,202,0.22)' : 'rgba(42,100,150,0.18)',
+          weight:      (hi||ext) ? 2.5 : 1.5,
+          fillOpacity: (hi||ext) ? 0.6 : 0.35,
+        };
+      },
+      onEachFeature(f, layer) {
+        if (!interactive) return;
+        const name  = f.properties?.glac_name || '';
+        const id    = f.properties?.glac_id || '';
+        const area  = f.properties?.area || '';
+        const date  = (f.properties?.src_date||'').split('T')[0].replace(/-/g,'/');
+        let p = name ? `<strong>${name}</strong>` : `<strong>Glacier</strong>`;
+        p += `<div style="margin-top:8px;font-size:12px;line-height:1.7;color:#7aafc5">`;
+        if (id)   p += `<div>ID: <code style="color:#4a9eca;font-size:11px">${id}</code></div>`;
+        if (area) p += `<div>Area: ${area} km²</div>`;
+        if (date) p += `<div>Last obs: ${date}</div>`;
+        p += `</div>`;
+        const links = [];
+        if (name && glacierMarkers[name])
+          links.push(`<a href="#" onclick="open3DModal('${name.replace(/'/g,"\\'")}');return false">🏔 3D View</a>`);
+        if (id && highlightedGlacierIds.has(id))
+          links.push(`<a href="/glacier-transition/${encodeURIComponent(id)}" target="_blank">📅 Transition</a>`);
+        if (links.length)
+          p += `<div style="margin-top:10px;display:flex;gap:14px;font-size:12px">${links.join('')}</div>`;
+        layer.bindPopup(p);
+      }
+    });
+  }
+
+  async function loadGeoJSON() {
+    try {
+      const r = await fetch('/static/a.geojson');
+      if (!r.ok) throw new Error(r.status);
+      const g = await r.json();
+      L.layerGroup([
+        makeLayer(offsetFC(g,-360), false),
+        makeLayer(g, true),
+        makeLayer(offsetFC(g, 360), false),
+      ]).addTo(map);
+    } catch(e) { console.error('GeoJSON load failed:', e); }
+  }
+
+  loadGeoJSON();
+
+  // Named markers
+  Object.entries(glacierMarkers).forEach(([name, g]) => {
+    const m = L.marker([g.latitude, g.longitude]).addTo(map);
+    m.bindPopup(`
+      <strong>${name}</strong>
+      <div style="color:#7aafc5;font-size:12px;margin-top:4px">${g.country}</div>
+      <div style="margin-top:10px;display:flex;gap:14px;font-size:12px">
+        <a href="/glacier/${encodeURIComponent(name)}">Details</a>
+        <a href="#" onclick="open3DModal('${name.replace(/'/g,"\\'")}');return false">🏔 3D View</a>
+      </div>
+    `);
+    m.on('click', () => m.openPopup());
+  });
 }
 
-  async function createMap() {
-    await loadGlacierManifest();
-    const map = L.map('map', { preferCanvas: true, zoomControl: true, scrollWheelZoom: true, worldCopyJump: true }).setView([15, 0], 3);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: '&copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community',
-      maxZoom: 18,
-    }).addTo(map);
-
-    const canvasRenderer = L.canvas({ padding: 0.5 });
-
-    function shiftCoordinates(coords, offset) {
-      if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
-        return [coords[0] + offset, coords[1]];
-      }
-      return coords.map(inner => shiftCoordinates(inner, offset));
-    }
-
-    function cloneGeoJSONWithOffset(featureCollection, offset) {
-      return {
-        type: 'FeatureCollection',
-        features: featureCollection.features.map(feature => {
-          const clone = JSON.parse(JSON.stringify(feature));
-          clone.geometry.coordinates = shiftCoordinates(clone.geometry.coordinates, offset);
-          if (clone.bbox) {
-            clone.bbox = [clone.bbox[0] + offset, clone.bbox[1], clone.bbox[2] + offset, clone.bbox[3]];
-          }
-          return clone;
-        })
-      };
-    }
-
-    function createGeoJSONLayer(geojson, options = {}) {
-      return L.geoJSON(geojson, {
-        renderer: canvasRenderer,
-        smoothFactor: 10,
-        style: function(feature) {
-          const glacId = feature.properties?.glac_id;
-          const extinct = feature.properties?.gone_date;
-          const highlighted = glacId && highlightedGlacierIds.has(glacId);
-          const color = extinct ? 'rgba(255,0,0,0.5)' : (highlighted ? '#FF00FF' : '#0000FF');
-          const fillColor = extinct ? 'rgba(255,0,0,0.2)' : (highlighted ? 'rgba(255,0,255,0.7)' : 'rgba(0,0,255,0.3)');
-          return {
-            color: color, // Opaque white for extinct, magenta for highlighted, blue otherwise
-            fillColor: fillColor,
-            weight: highlighted || extinct ? 3 : 2, // Thicker for highlighted
-            fillOpacity: highlighted || extinct ? 0.7 : 0.3,
-          };
-        },
-        onEachFeature: function (feature, layer) {
-          if (options.interactive === false) return;
-
-          let popupContent = '';
-          const name = feature.properties?.glac_name || '';
-          if (feature.properties) {
-            if (name) {
-              popupContent = '<strong>Glacier: ' + name + '</strong>';
-            } else {
-              popupContent = '<strong>Glacier polygon</strong>';
-            }
-            popupContent += '<ul style="margin:8px 0 0 0;padding-left:18px;font-size:0.95em">';
-            popupContent += `<li><b>Id:</b> ${feature.properties.glac_id}</li>`;
-            popupContent += `<li><b>Area:</b> ${feature.properties.area || feature.properties.db_area}</li>`;
-            const formattedDate = feature.properties.src_date ? feature.properties.src_date.split('T')[0].replace(/-/g, '/') : '';
-            popupContent += `<li><b>Last Observation:</b> ${formattedDate}</li>`;
-            popupContent += '</ul>';
-          } else {
-            popupContent = 'Glacier polygon';
-          }
-          const glacId = feature.properties?.glac_id;
-          if (name && glacierMarkers[name]) {
-            popupContent += `<br><a href="#" onclick="open3DModal('${name.replace(/'/g, "\\'")}');return false" style="color:#4fc3f7;font-weight:bold;text-decoration:underline;">🏔 Open 3D View</a>`;
-          }
-          if (glacId && highlightedGlacierIds.has(glacId)) {
-            popupContent += `<br><a href="/glacier-transition/${encodeURIComponent(glacId)}" style="color:#ff8cff;font-weight:bold;text-decoration:underline;" target="_blank">Transition view</a>`;
-          }
-          layer.bindPopup(popupContent);
-        }
-      });
-    }
-
-    async function loadGlacierGeoJSON() {
-      try {
-        console.log('Loading glacier GeoJSON from /static/a.geojson');
-        const res = await fetch('/static/a.geojson');
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
-        const geojson = await res.json();
-        console.log('GeoJSON loaded successfully, features:', geojson.features?.length);
-        
-        // Create main layer
-        const mainLayer = createGeoJSONLayer(geojson, { interactive: true });
-        
-        // Create duplicate layers for world wrapping
-        const leftLayer = createGeoJSONLayer(cloneGeoJSONWithOffset(geojson, -360), { interactive: false });
-        const rightLayer = createGeoJSONLayer(cloneGeoJSONWithOffset(geojson, 360), { interactive: false });
-        
-        // Add all layers to map
-        L.layerGroup([leftLayer, mainLayer, rightLayer]).addTo(map);
-        console.log('Glacier layers added to map');
-      } catch (error) {
-        console.error('Error loading glacier GeoJSON:', error);
-      }
-    }
-
-    // Load the glacier GeoJSON
-    loadGlacierGeoJSON();
-
-    Object.entries(glacierMarkers).forEach(([name, glacier]) => {
-      const marker = L.marker([glacier.latitude, glacier.longitude]).addTo(map);
-      marker.bindPopup(`
-        <strong>${name}</strong><br>
-        ${glacier.country}<br>
-        <a href="/glacier/${encodeURIComponent(name)}">View details</a><br>
-        <a href="#" onclick="open3DModal('${name.replace(/'/g, "\\'")}');return false" style="color:#4fc3f7;">🏔 Open 3D View</a>
-      `);
-      marker.on('click', () => marker.openPopup());
-    });
-  }
-
-  async function loadData() {
-    const res = await fetch('/api/glaciers');
-    const data = await res.json();
-
-    const grouped = {};
-    data.forEach(row => {
-      if (!grouped[row.glacier_name]) grouped[row.glacier_name] = [];
-      grouped[row.glacier_name].push(row);
-    });
-
-    const listEl = document.getElementById('glacierList');
-    Object.entries(glacierMarkers).forEach(([name, glacier]) => {
-      const latest = grouped[name]?.slice().sort((a, b) => b.year - a.year)[0];
-      const latestThickness = latest ? `${latest.thickness_meters} m` : 'N/A';
-      listEl.innerHTML += `
-        <div class="glacier-card">
-          <div>
-            <h3>${name} — ${glacier.country}</h3>
-            <p>${glacier.description}</p>
-            <p><strong>Latest thickness:</strong> ${latestThickness}</p>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <a href="/glacier/${encodeURIComponent(name)}">See details</a>
-            <span class="btn-3d" onclick="open3DModal('${name.replace(/'/g, "\\'")}')">🏔 3D View</span>
-          </div>
-        </div>`;
-    });
-  }
-
-  console.log('=== Calling createMap() ===');
-  createMap();
-  console.log('=== Calling loadData() ===');
-  loadData();
-  console.log('=== Script initialization complete ===');
+createMap();
 </script>
 </body>
 </html>
