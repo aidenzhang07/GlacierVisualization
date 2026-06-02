@@ -18,6 +18,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true # If your repository uses Git LFS, set this to true to ensure large files are properly checked out.
 
       - name: Set up Python version
         uses: actions/setup-python@v5
