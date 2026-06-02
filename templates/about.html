@@ -21,21 +21,29 @@
       --nav-h:    56px;
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
     body {
-      background:var(--bg); color:var(--text);
-      font-family:'Outfit',sans-serif; font-size:15px; line-height:1.6;
-      min-height:100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      line-height: 1.75;
+      min-height: 100vh;
     }
+
+    /* ── NAV ─────────────────────────────────────────────────────── */
     .nav {
-      position:fixed; top:0; left:0; right:0; z-index:1000;
-      height:var(--nav-h);
-      background:rgba(10,12,15,0.88); backdrop-filter:blur(24px);
-      border-bottom:1px solid var(--border);
-      display:flex; align-items:center; padding:0 32px;
+      position: fixed; top:0; left:0; right:0; z-index:1000;
+      height: var(--nav-h);
+      background: rgba(10,12,15,0.94);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 32px;
     }
     .nav-brand {
       font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem;
-      color:var(--white); text-decoration:none; letter-spacing:-0.02em; margin-right:auto;
+      color:var(--white); text-decoration:none;
+      letter-spacing:-0.02em; margin-right:auto;
     }
     .nav-brand b { color:var(--accent); }
     .nav-links { display:flex; gap:2px; list-style:none; }
@@ -48,39 +56,181 @@
     .nav-links a:hover { color:var(--head); background:rgba(255,255,255,0.04); }
     .nav-links a.active { color:var(--accent); background:rgba(74,158,202,0.08); }
 
+    /* ── PAGE SHELL ──────────────────────────────────────────────── */
     .page {
-      padding-top: calc(var(--nav-h) + 64px);
-      max-width: 720px; margin:0 auto;
-      padding-left:24px; padding-right:24px; padding-bottom:100px;
+      padding-top: calc(var(--nav-h) + 72px);
+      padding-bottom: 120px;
+      /* fluid: grows with viewport, moderate margins at any width */
+      max-width: clamp(640px, 86vw, 1160px);
+      margin: 0 auto;
+      padding-left: clamp(20px, 4vw, 56px);
+      padding-right: clamp(20px, 4vw, 56px);
     }
-    .section-label {
-      font-size:11px; letter-spacing:0.2em; text-transform:uppercase;
-      color:var(--accent); margin-bottom:12px; font-weight:500;
-    }
-    h1 {
-      font-family:'Syne',sans-serif; font-weight:800;
-      font-size:clamp(2rem,5vw,3.2rem); letter-spacing:-0.04em;
-      color:var(--head); margin-bottom:40px; line-height:1.05;
-    }
-    .placeholder {
-      border:1px dashed var(--border2); border-radius:12px;
-      padding:72px 40px; text-align:center;
-    }
-    .placeholder p {
-      font-family:'Syne',sans-serif; font-weight:600;
-      font-size:13px; letter-spacing:0.1em; text-transform:uppercase;
-      color:var(--border2); margin-bottom:8px;
-    }
-    .placeholder small { font-size:12px; color:#2a3540; }
 
+    /* ── PAGE HEADER ─────────────────────────────────────────────── */
+    .page-label {
+      font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--accent); font-weight: 500; margin-bottom: 14px;
+    }
+    .page-title {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(2.2rem, 6vw, 3.4rem);
+      letter-spacing: -0.04em; line-height: 1.0;
+      color: var(--head); margin-bottom: 48px;
+    }
+
+    /* ── SECTION SPACING (replaces dividers) ───────────────────── */
+    .section + .section-label,
+    .split + .section-label,
+    .source-table + .section-label {
+      margin-top: 80px;
+    }
+
+    /* ── SECTION HEADER ──────────────────────────────────────────── */
+    .section-label {
+      font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-dim); font-weight: 500; margin-bottom: 10px;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 1.25rem; letter-spacing: -0.02em;
+      color: var(--head); margin-bottom: 28px; line-height: 1.2;
+    }
+
+    /* ── BODY TEXT ───────────────────────────────────────────────── */
+    .body-text {
+      font-size: 15px; line-height: 1.8;
+      color: var(--text); margin-bottom: 20px;
+    }
+    .body-text:last-child { margin-bottom: 0; }
+
+    /* ── IMAGE PLACEHOLDER ───────────────────────────────────────── */
+    .img-block {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: var(--surface);
+      border: 1px dashed var(--border2);
+      border-radius: 10px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px;
+      margin: 28px 0;
+      color: var(--border2);
+      font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .img-block::before {
+      content: '';
+      display: block; width: 32px; height: 32px;
+      border: 1.5px dashed var(--border2); border-radius: 4px;
+    }
+
+    /* half-width image (for left/right pairs) */
+    .img-block.half {
+      aspect-ratio: 4/3;
+      margin: 0;
+    }
+
+    /* ── TWO-COLUMN LAYOUT ───────────────────────────────────────── */
+    /* text LEFT, image RIGHT */
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+      align-items: start;
+      margin: 28px 0;
+    }
+    .split.flip { direction: rtl; }
+    .split.flip > * { direction: ltr; }
+
+    @media (max-width: 600px) {
+      .split { grid-template-columns: 1fr; }
+      .split.flip { direction: ltr; }
+    }
+
+    /* ── INLINE TAG ──────────────────────────────────────────────── */
+    .tag {
+      display: inline-block;
+      background: rgba(74,158,202,0.08);
+      border: 1px solid rgba(74,158,202,0.18);
+      color: var(--accent);
+      font-size: 11px; letter-spacing: 0.08em;
+      padding: 3px 10px; border-radius: 5px;
+      margin: 2px 3px 2px 0;
+    }
+
+    /* ── LINK ────────────────────────────────────────────────────── */
+    a.inline-link {
+      color: var(--accent); text-decoration: none;
+      border-bottom: 1px solid rgba(74,158,202,0.3);
+      transition: border-color 0.15s, color 0.15s;
+    }
+    a.inline-link:hover { color: var(--head); border-color: var(--head); }
+
+    /* ── CONTACT CARD ────────────────────────────────────────────── */
+    .contact-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 28px;
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+    .contact-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--border2);
+      border: 1px dashed var(--border2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; text-align: center;
+      color: var(--border2); line-height: 1.4;
+      flex-shrink: 0;
+    }
+    .contact-name {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 1rem; color: var(--head); margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+    .contact-role { font-size: 12px; color: var(--text-dim); margin-bottom: 14px; }
+    .contact-links { display: flex; gap: 10px; flex-wrap: wrap; }
+    .contact-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 6px;
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--text-dim); text-decoration: none; font-size: 12px;
+      transition: all 0.15s;
+    }
+    .contact-link:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── DATA SOURCE ROW ─────────────────────────────────────────── */
+    .source-row {
+      display: flex; align-items: baseline;
+      gap: 14px; padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .source-row:first-child { border-top: 1px solid var(--border); }
+    .source-name {
+      font-family: 'Syne', sans-serif; font-weight: 600;
+      font-size: 13px; color: var(--head); width: 160px; flex-shrink: 0;
+    }
+    .source-desc { font-size: 13px; color: var(--text-dim); flex: 1; }
+    .source-link {
+      font-size: 11px; color: var(--accent); text-decoration: none;
+      white-space: nowrap; opacity: 0.8;
+    }
+    .source-link:hover { opacity: 1; }
+
+    /* ── FOOTER ──────────────────────────────────────────────────── */
     footer {
-      border-top:1px solid var(--border); padding:24px 32px;
-      font-size:12px; color:var(--text-dim); text-align:center;
+      border-top: 1px solid var(--border);
+      padding: 24px 32px;
+      font-size: 12px; color: var(--text-dim); text-align: center;
     }
   </style>
 </head>
 <body>
 
+<!-- ── NAV ── -->
 <nav class="nav">
   <a class="nav-brand" href="/"><b>Glacier</b>IQ</a>
   <ul class="nav-links">
@@ -91,15 +241,169 @@
 </nav>
 
 <main class="page">
-  <p class="section-label">Project</p>
-  <h1>About GlacierIQ</h1>
-  <div class="placeholder">
-    <p>Content coming soon</p>
-    <small>Project background, data sources, methodology, and acknowledgements</small>
+
+  <!-- ── PAGE HEADER ── -->
+  <p class="page-label">Project</p>
+  <h1 class="page-title">About GlacierIQ</h1>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 1 — SENIOR PROJECT BACKGROUND
+  ══════════════════════════════════════════════════════════════════ -->
+  <p class="section-label">Background</p>
+  <h2 class="section-title">Senior Capstone Project</h2>
+
+  <div class="split">
+    <div>
+      <p class="body-text">
+        <!-- FILL: 2–3 sentences on what the senior project is, the school/program context, and the goal. -->
+        [ Your senior project description here. What was the assignment, what did you set out to build, and why did you choose glaciers as the subject? ]
+      </p>
+      <p class="body-text">
+        <!-- FILL: What problem you identified and how GlacierIQ addresses it. -->
+        [ The problem you identified. Describe the gap between existing scientific databases and public accessibility. ]
+      </p>
+    </div>
+    <div class="img-block half">image</div>
   </div>
+
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 2 — GLIMS DATABASE
+  ══════════════════════════════════════════════════════════════════ -->
+  <p class="section-label" style="margin-top:80px;">Data</p>
+  <h2 class="section-title">The GLIMS Database</h2>
+
+  <div class="split flip">
+    <div class="img-block half">image</div>
+    <div>
+      <p class="body-text">
+        <!-- FILL: What GLIMS is, who maintains it, what it contains. -->
+        [ Describe GLIMS — Global Land Ice Measurements from Space. Maintained by NSIDC. Over 1 million polygon outlines. Multi-temporal. ]
+      </p>
+      <p class="body-text">
+        <!-- FILL: How you used it — what files, what processing, what you discovered. -->
+        [ How you accessed and processed the data. North/south hemisphere DBF files, the encoding challenges, the temporal inconsistency. ]
+      </p>
+      <p class="body-text">
+        <!-- FILL: Other datasets used — WGMS, GlaThiDa, ITS_LIVE. One sentence each. -->
+        [ Additional datasets: WGMS mass balance, GlaThiDa thickness, NASA ITS_LIVE velocity. ]
+      </p>
+    </div>
+  </div>
+
+  <!-- data source table -->
+  <div style="margin-top:32px;">
+    <div class="source-row">
+      <span class="source-name">GLIMS / NSIDC</span>
+      <span class="source-desc">1M+ glacier outline polygons, 1960s–present</span>
+      <a class="source-link" href="https://nsidc.org/data/nsidc-0272" target="_blank">nsidc.org ↗</a>
+    </div>
+    <div class="source-row">
+      <span class="source-name">WGMS FoG</span>
+      <span class="source-desc">Annual mass balance, 62 reference glaciers since 1894</span>
+      <a class="source-link" href="https://wgms.ch" target="_blank">wgms.ch ↗</a>
+    </div>
+    <div class="source-row">
+      <span class="source-name">GlaThiDa</span>
+      <span class="source-desc">3.9M radar ice-thickness measurements, ~3,000 glaciers</span>
+      <a class="source-link" href="https://doi.org/10.5904/wgms-glathida-2020-10" target="_blank">DOI ↗</a>
+    </div>
+    <div class="source-row">
+      <span class="source-name">NASA ITS_LIVE</span>
+      <span class="source-desc">Surface velocity from 36M+ satellite image pairs, 1985–present</span>
+      <a class="source-link" href="https://its-live.jpl.nasa.gov" target="_blank">jpl.nasa.gov ↗</a>
+    </div>
+    <div class="source-row">
+      <span class="source-name">Landsat / Sentinel-2</span>
+      <span class="source-desc">Annual satellite composites via Google Earth Engine</span>
+      <a class="source-link" href="https://earthengine.google.com" target="_blank">earthengine.google ↗</a>
+    </div>
+  </div>
+
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 3 — GITHUB / SOURCE CODE
+  ══════════════════════════════════════════════════════════════════ -->
+  <p class="section-label" style="margin-top:80px;">Source Code</p>
+  <h2 class="section-title">Open on GitHub</h2>
+
+  <div class="split">
+    <div>
+      <p class="body-text">
+        <!-- FILL: Brief description of what the repo contains — Flask app, data pipeline scripts, GeoJSON processing. -->
+        [ Describe what is in the repository. The Flask backend, data processing scripts (GLIMS converter, GlaThiDa filter, reference glacier builder), and frontend templates. ]
+      </p>
+      <p class="body-text">
+        <!-- FILL: Any setup instructions or notes. -->
+        [ Any relevant notes — how to run locally, dependencies, or a pointer to the README. ]
+      </p>
+      <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
+        <span class="tag">Python / Flask</span>
+        <span class="tag">Leaflet.js</span>
+        <span class="tag">Three.js</span>
+        <span class="tag">Google Earth Engine</span>
+        <span class="tag">SQLite</span>
+      </div>
+      <p style="margin-top:24px;">
+        <a class="inline-link" href="https://github.com/YOUR_USERNAME/GlacierVisualization" target="_blank">
+          github.com/YOUR_USERNAME/GlacierVisualization ↗
+        </a>
+      </p>
+    </div>
+    <div class="img-block half">image</div>
+  </div>
+
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 4 — ABOUT THE CREATOR
+  ══════════════════════════════════════════════════════════════════ -->
+  <p class="section-label" style="margin-top:80px;">Creator</p>
+  <h2 class="section-title">About Me</h2>
+
+  <div class="split flip" style="margin-bottom:32px;">
+    <div class="img-block half">photo</div>
+    <div>
+      <p class="body-text">
+        <!-- FILL: Who you are — student, school, interests, background. -->
+        [ A short bio. Who are you, where do you go to school, what are your interests in science/tech? ]
+      </p>
+      <p class="body-text">
+        <!-- FILL: Why this project specifically — personal connection to glaciers, climate, the Pacific Northwest. -->
+        [ Why glaciers. A personal note — maybe the photo on the homepage was taken by you, or you've visited a glacier. ]
+      </p>
+    </div>
+  </div>
+
+  <!-- contact card -->
+  <div class="contact-card">
+    <div class="contact-avatar">photo</div>
+    <div>
+      <div class="contact-name">Aiden Zhang</div>
+      <div class="contact-role"><!-- FILL: e.g. "Senior · [Your School] · Class of 2025" --></div>
+      <div class="contact-links">
+        <a class="contact-link" href="mailto:YOUR_EMAIL">
+          ✉ Email
+        </a>
+        <a class="contact-link" href="https://github.com/YOUR_USERNAME" target="_blank">
+          ⌥ GitHub
+        </a>
+        <a class="contact-link" href="https://linkedin.com/in/YOUR_PROFILE" target="_blank">
+          ↗ LinkedIn
+        </a>
+      </div>
+    </div>
+  </div>
+
 </main>
 
-<footer>GlacierIQ — Senior Capstone · Aiden Zhang</footer>
+<footer>
+  GlacierIQ — Senior Capstone · Aiden Zhang &nbsp;·&nbsp;
+  Data: NSIDC GLIMS · WGMS · GlaThiDa · NASA ITS_LIVE
+</footer>
 
 </body>
 </html>
