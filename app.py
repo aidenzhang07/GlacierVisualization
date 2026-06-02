@@ -4,9 +4,14 @@ import os
 import threading
 import re
 import json
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 DB_PATH = "glacier.db"
+ENV_PATH = os.path.join(os.path.dirname(__file__), ".env")
+
+# Load environment variables from .env (if present)
+load_dotenv(ENV_PATH)
 
 # Cache root for downloaded GeoTIFFs — organized by glacier name
 CACHE_ROOT = os.path.join(os.path.dirname(__file__), "tifcache")
@@ -303,8 +308,16 @@ def _download_for_glacier(glacier_name):
     import ee
     import geemap
 
-    ee.Authenticate()
-    ee.Initialize(project='aidenglacierviewer')
+    ee_key = os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or os.getenv("EARTHENGINE_SERVICE_ACCOUNT_KEY_PATH")
+    if ee_key:
+        if not os.path.isabs(ee_key):
+            ee_key = os.path.join(os.path.dirname(__file__), ee_key)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = ee_key
+        print(f"  → Using Earth Engine credentials from {ee_key}")
+        ee.Initialize(project='aidenglacierviewer')
+    else:
+        ee.Authenticate()
+        ee.Initialize(project='aidenglacierviewer')
 
     bbox = KNOWN_GLACIERS[glacier_name]["bbox"]
     aoi = ee.Geometry.BBox(*bbox)
