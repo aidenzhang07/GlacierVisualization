@@ -126,6 +126,12 @@
     .leaflet-control-zoom a:last-child  { border-radius:0 0 8px 8px !important; }
     .leaflet-control-zoom a:hover { background:rgba(74,158,202,0.2) !important; color:var(--accent) !important; }
 
+    /* nudge right-side controls when sidebar open */
+    body.sidebar-open .leaflet-top.leaflet-right {
+      transition: right 0.32s cubic-bezier(.4,0,.2,1);
+      right: 320px;
+    }
+
     /* ── MODAL ── */
     #modalOverlay {
       display:none; position:fixed; inset:0; z-index:3000;
@@ -168,6 +174,164 @@
     .spinner-text { font-size:13px; color:var(--text-dim); }
     .spinner-sub  { font-size:11px; color:var(--text-dim); opacity:0.6; }
     @keyframes spin { to { transform:rotate(360deg); } }
+    /* ── SIDEBAR TOGGLE TAB ─────────────────────────────────────── */
+    #sidebarTab {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      z-index: 1500;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      background: var(--accent);
+      color: #000;
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 16px 8px;
+      border-radius: 8px 0 0 8px;
+      cursor: pointer;
+      border: none;
+      user-select: none;
+      transition: background 0.15s, right 0.32s cubic-bezier(.4,0,.2,1);
+      box-shadow: -2px 0 12px rgba(0,0,0,0.35);
+    }
+    #sidebarTab:hover { background: #5db3e6; }
+    body.sidebar-open #sidebarTab { right: 320px; }
+
+    /* ── SIDEBAR PANEL ──────────────────────────────────────────── */
+    #infoSidebar {
+      position: fixed;
+      top: var(--nav-h);
+      right: -320px;
+      width: 320px;
+      bottom: 0;
+      z-index: 1400;
+      background: rgba(10,12,15,0.97);
+      border-left: 1px solid var(--border2);
+      backdrop-filter: blur(20px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      transition: right 0.32s cubic-bezier(.4,0,.2,1);
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
+    }
+    body.sidebar-open #infoSidebar { right: 0; }
+
+    /* ── SIDEBAR CONTENT ────────────────────────────────────────── */
+    .sb {
+      padding: 24px 20px 40px;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .sb-intro {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text-dim);
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .sb-intro b { color: var(--text); font-weight: 500; }
+
+    /* section */
+    .sb-section { margin-bottom: 28px; }
+
+    .sb-label {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .sb-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--head);
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .sb-body {
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text-dim);
+    }
+
+    /* color swatch inline */
+    .swatch {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 2px;
+      vertical-align: middle;
+      margin-right: 5px;
+      flex-shrink: 0;
+    }
+    .swatch-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+
+    /* ── IMAGE PLACEHOLDER — SIDE variant ──────────────────────── */
+    /* image sits to the RIGHT of text */
+    .sb-split {
+      display: grid;
+      grid-template-columns: 1fr 80px;
+      gap: 12px;
+      align-items: start;
+    }
+    .sb-split .sb-copy { /* text column */ }
+
+    /* ── IMAGE PLACEHOLDER — ABOVE variant ─────────────────────── */
+    /* image sits ABOVE text */
+    .sb-stacked { /* single column */ }
+
+    .img-ph {
+      background: var(--border);
+      border: 1px dashed var(--border2);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #2a3540;
+      flex-shrink: 0;
+    }
+    /* side image */
+    .img-ph.side  { width: 80px; height: 68px; }
+    /* above image — full width, 16:9 */
+    .img-ph.above { width: 100%; aspect-ratio: 16/9; margin-bottom: 10px; }
+    /* gif — wider aspect */
+    .img-ph.gif   { width: 100%; aspect-ratio: 5/3; margin-bottom: 10px; }
+
+    /* section divider — subtle, no line, just space */
+    .sb-gap { height: 4px; }
+
+    /* real images in sidebar */
+    .sb-img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: block;
+      background: var(--border);
+    }
+    .sb-img-gif {
+      aspect-ratio: 5/3;
+    }
+
   </style>
 </head>
 <body>
@@ -275,7 +439,7 @@ async function createMap() {
     { position:'topright', collapsed:true }
   ).addTo(map);
 
-  L.control.scale({ position:'bottomleft', imperial:true, metric:true, maxWidth:140 }).addTo(map);
+  L.control.scale({ position:'bottomleft', imperial:true, metric:true, maxWidth:180 }).addTo(map);
 
   // GeoJSON glacier layer
   const renderer = L.canvas({ padding:0.5 });
@@ -301,8 +465,8 @@ async function createMap() {
         const ext  = f.properties?.gone_date;
         const hi   = id && highlightedGlacierIds.has(id);
         return {
-          color:       ext ? '#e05050' : hi ? '#4a9eca' : '#2a6496',
-          fillColor:   ext ? 'rgba(224,80,80,0.18)' : hi ? 'rgba(74,158,202,0.22)' : 'rgba(42,100,150,0.18)',
+          color:       ext ? '#e05050' : hi ? '#c060e8' : '#2a6496',
+          fillColor:   ext ? 'rgba(224,80,80,0.18)' : hi ? 'rgba(192,96,232,0.22)' : 'rgba(42,100,150,0.18)',
           weight:      (hi||ext) ? 2.5 : 1.5,
           fillOpacity: (hi||ext) ? 0.6 : 0.35,
         };
@@ -345,6 +509,7 @@ async function createMap() {
   }
 
   loadGeoJSON();
+  window._leafletMap = map;
 
   // Named markers
   Object.entries(glacierMarkers).forEach(([name, g]) => {
@@ -363,5 +528,107 @@ async function createMap() {
 
 createMap();
 </script>
+<!-- ── INFO SIDEBAR TAB ── -->
+<button id="sidebarTab" onclick="toggleSidebar()" aria-label="Toggle map guide">
+  Map Guide
+</button>
+
+<!-- ── INFO SIDEBAR PANEL ── -->
+<div id="infoSidebar" role="complementary" aria-label="Map guide">
+  <div class="sb">
+
+    <!-- intro -->
+    <p class="sb-intro">
+      <b>How to read this map.</b> Click any glacier polygon to see its record.
+      Outline colors and thickness indicate data coverage.
+    </p>
+
+
+
+    <!-- Multi-obs outline — SIDE layout -->
+    <div class="sb-section">
+      <p class="sb-label">Outline type 01</p>
+      <div class="sb-stacked">
+        <img src="/static/images/multOutline.png" class="sb-img" alt="Multi-observation glacier outline">
+        <p class="sb-title">
+          <span class="swatch" style="background:#c060e8;"></span>
+          Multi-observation glacier
+        </p>
+        <p class="sb-body">
+          Purple outline. This glacier has two or more observations in GLIMS — enough to show change over time.
+        </p>
+      </div>
+    </div>
+
+    <!-- Single-obs outline — SIDE layout -->
+    <div class="sb-section">
+      <p class="sb-label">Outline type 02</p>
+      <div class="sb-stacked">
+        <img src="/static/images/sinOutline.png" class="sb-img" alt="Single observation glacier outline">
+        <p class="sb-title">
+          <span class="swatch" style="background:#2a6496;"></span>
+          Single observation glacier
+        </p>
+        <p class="sb-body">
+          Dark blue outline. Only one recorded outline in GLIMS — no time-series comparison available.
+        </p>
+      </div>
+    </div>
+
+    <!-- Extinct outline — SIDE layout -->
+    <div class="sb-section">
+      <p class="sb-label">Outline type 03</p>
+      <div class="sb-stacked">
+        <img src="/static/images/extOutline.png" class="sb-img" alt="Extinct glacier outline">
+        <p class="sb-title">
+          <span class="swatch" style="background:#e05050;"></span>
+          Extinct glacier
+        </p>
+        <p class="sb-body">
+          Red outline. GLIMS records a <code style="font-size:10px;color:#4a9eca">gone_date</code> — this glacier no longer exists.
+        </p>
+      </div>
+    </div>
+
+
+
+
+
+    <!-- Navigation -->
+    <div class="sb-section">
+      <p class="sb-label">Navigation</p>
+      <div class="sb-stacked">
+        <img src="/static/images/selectGlacier.gif" class="sb-img sb-img-gif" alt="How to select and navigate glaciers on the map">
+        <p class="sb-title">Interacting with the map</p>
+        <p class="sb-body">
+          Click any polygon to open its data popup. Use the layer
+          switcher (top right) to change base maps. Click
+          <em>Transition</em> to step through historical outlines.
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /sb -->
+</div><!-- /infoSidebar -->
+
+<script>
+function toggleSidebar() {
+  const open = document.body.classList.toggle('sidebar-open');
+  document.getElementById('sidebarTab').setAttribute(
+    'aria-expanded', open ? 'true' : 'false'
+  );
+  // Nudge Leaflet to redraw after transition so tiles fill correctly
+  setTimeout(() => {
+    const mapEl = document.getElementById('map');
+    if (window._leafletMap) window._leafletMap.invalidateSize();
+  }, 350);
+}
+// close sidebar on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.body.classList.contains('sidebar-open'))
+    toggleSidebar();
+});
+</script>
+
 </body>
 </html>
