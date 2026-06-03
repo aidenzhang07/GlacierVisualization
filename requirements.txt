@@ -1,9 +1,12 @@
 flask>=3.0.0
 gunicorn
-rasterio
 numpy
 pillow
+tifffile
 scikit-image
+shapely
+pyproj
+requests
 earthengine-api
 geemap
 geedim

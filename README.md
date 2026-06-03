@@ -36,6 +36,15 @@ cd path/to/glacier_app
 pip install -r requirements.txt
 ```
 
+### 3.1 If your GeoJSON and GeoTIFF assets are on Azure Blob Storage
+Create a `.env` file in the project root and add:
+```ini
+AZURE_BLOB_BASE_URL=https://<your-storage-account>.blob.core.windows.net/<container>
+GLACIER_MANIFEST_URL=https://<your-storage-account>.blob.core.windows.net/<container>/glacier_data/manifest.json
+A_GEOJSON_URL=https://<your-storage-account>.blob.core.windows.net/<container>/static/a.geojson
+REMOTE_TIF_YEARS=1984-2024
+```
+
 ### 4. Run the app
 ```bash
 python app.py

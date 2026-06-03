@@ -382,16 +382,11 @@ async function open3DModal(name) {
     let r = await fetch('/api/glacier-image/years/' + encodeURIComponent(name));
     let d = await r.json();
     if (!d.complete) {
-      sub.textContent = 'Fetching from satellite…';
-      await fetch('/api/glacier-image/download/' + encodeURIComponent(name), { method:'POST' });
-      for (let i=0; i<120; i++) {
-        await new Promise(r=>setTimeout(r,2000));
-        let st = await (await fetch('/api/glacier-image/status/'+encodeURIComponent(name))).json();
-        sub.textContent = (st.years_ready||[]).length + ' years ready…';
-        if (st.complete) break;
-      }
+      sub.textContent = 'Looking for blob-hosted GeoTIFFs…';
     }
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    console.error(e);
+  }
   spinner.style.display = 'none';
   iframe.src = '/geotiff-viewer?glacier=' + encodeURIComponent(name);
   iframe.style.display = 'block';
@@ -495,9 +490,11 @@ async function createMap() {
     });
   }
 
+  const GEOJSON_URL = {{ geojson_url | tojson }};
+
   async function loadGeoJSON() {
     try {
-      const r = await fetch('/static/a.geojson');
+      const r = await fetch(GEOJSON_URL);
       if (!r.ok) throw new Error(r.status);
       const g = await r.json();
       L.layerGroup([

@@ -1,9 +1,12 @@
 from flask import Flask, abort, jsonify, render_template, request
 import sqlite3
 import os
-import threading
+import sys
 import re
 import json
+import urllib.parse
+import urllib.request
+from urllib.error import HTTPError, URLError
 from dotenv import load_dotenv
 
 app = Flask(__name__)
@@ -13,12 +16,19 @@ ENV_PATH = os.path.join(os.path.dirname(__file__), ".env")
 # Load environment variables from .env (if present)
 load_dotenv(ENV_PATH)
 
-# Cache root for downloaded GeoTIFFs — organized by glacier name
-CACHE_ROOT = os.path.join(os.path.dirname(__file__), "tifcache")
+# Remote data config. If you have moved assets to anonymous Azure Blob Storage,
+# set AZURE_BLOB_BASE_URL to the container root.
+BLOB_BASE_URL = os.getenv("AZURE_BLOB_BASE_URL", "https://glacierdata.blob.core.windows.net/glacieriq").rstrip("/")
+GLACIER_MANIFEST_URL = os.getenv("GLACIER_MANIFEST_URL") or (
+    f"{BLOB_BASE_URL}/glacier_data/manifest.json" if BLOB_BASE_URL else None
+)
+A_GEOJSON_URL = os.getenv("A_GEOJSON_URL") or (
+    f"{BLOB_BASE_URL}/static/a.geojson" if BLOB_BASE_URL else None
+)
+REMOTE_TIF_YEARS = os.getenv("REMOTE_TIF_YEARS")
 
-# Track in-progress downloads so we don't duplicate EE calls
-_download_locks = {}
-_download_lock = threading.Lock()
+# Cache root for GeoTIFFs — local fallback only, blob-hosted files are preferred
+CACHE_ROOT = os.path.join(os.path.dirname(__file__), "tifcache")
 
 KNOWN_GLACIERS = {
     "Athabasca": {
@@ -66,11 +76,103 @@ GLACIER_ID_MAPPING = {
 GLACIER_MANIFEST_PATH = os.path.join(os.path.dirname(__file__), "glacier_data", "manifest.json")
 
 
+def _is_url(value):
+    return isinstance(value, str) and value.startswith(("http://", "https://"))
+
+
+def _join_url(base, path):
+    if not base:
+        return None
+    return urllib.parse.urljoin(base.rstrip("/") + "/", path.lstrip("/"))
+
+
+def _load_json_from_url(url):
+    try:
+        with urllib.request.urlopen(url) as response:
+            charset = response.headers.get_content_charset() or "utf-8"
+            return json.loads(response.read().decode(charset))
+    except Exception as e:
+        print(f"Error loading JSON from {url}: {e}", file=sys.stderr)
+        return None
+
+
+def _load_binary_from_url(url):
+    try:
+        with urllib.request.urlopen(url) as response:
+            return response.read()
+    except Exception as e:
+        print(f"Error loading binary data from {url}: {e}", file=sys.stderr)
+        return None
+
+
+def _remote_file_exists(url):
+    if not url:
+        return False
+    try:
+        req = urllib.request.Request(url, method="HEAD")
+        with urllib.request.urlopen(req) as response:
+            return response.status < 400
+    except HTTPError as e:
+        if e.code == 405:
+            try:
+                with urllib.request.urlopen(url) as response:
+                    return response.status < 400
+            except Exception:
+                return False
+        return False
+    except URLError:
+        return False
+    except ValueError:
+        return False
+
+
+def _parse_years_list(value):
+    years = set()
+    for part in (value or "").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "-" in part:
+            try:
+                start, end = part.split("-", 1)
+                years.update(range(int(start), int(end) + 1))
+            except ValueError:
+                continue
+        else:
+            try:
+                years.add(int(part))
+            except ValueError:
+                continue
+    return sorted(years)
+
+
+def _remote_glacier_data_url(path):
+    if not BLOB_BASE_URL:
+        return None
+    return _join_url(BLOB_BASE_URL, f"glacier_data/{path}")
+
+
+def _remote_tiff_url(glacier_name, filename):
+    if not BLOB_BASE_URL:
+        return None
+    encoded_name = urllib.parse.quote(glacier_name, safe="")
+    encoded_file = urllib.parse.quote(filename, safe="")
+    return _join_url(BLOB_BASE_URL, f"tifcache/{encoded_name}/{encoded_file}")
+
+
 def load_glacier_manifest():
-    if not os.path.exists(GLACIER_MANIFEST_PATH):
-        return {"glaciers": {}}
-    with open(GLACIER_MANIFEST_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+    if _is_url(GLACIER_MANIFEST_URL):
+        manifest = _load_json_from_url(GLACIER_MANIFEST_URL)
+        if manifest is not None:
+            return manifest
+    if os.path.exists(GLACIER_MANIFEST_PATH):
+        with open(GLACIER_MANIFEST_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    if GLACIER_MANIFEST_URL:
+        manifest = _load_json_from_url(GLACIER_MANIFEST_URL)
+        if manifest is not None:
+            return manifest
+    return {"glaciers": {}}
 
 
 GLACIER_MANIFEST = load_glacier_manifest()
@@ -146,7 +248,11 @@ def init_db():
 @app.route("/")
 @app.route("/map")
 def index():
-    return render_template("index.html", glacier_markers=KNOWN_GLACIERS)
+    return render_template(
+        "index.html",
+        glacier_markers=KNOWN_GLACIERS,
+        geojson_url=A_GEOJSON_URL or "/static/a.geojson",
+    )
 
 
 @app.route("/about")
@@ -228,16 +334,21 @@ def highlighted_glaciers_geojson():
         if not entry:
             continue
             
-        # Load the individual glacier GeoJSON file
-        file_path = os.path.join(os.path.dirname(__file__), "glacier_data", entry["path"])
-        if os.path.exists(file_path):
+        local_path = os.path.join(os.path.dirname(__file__), "glacier_data", entry["path"])
+        remote_url = _remote_glacier_data_url(entry["path"])
+        glacier_data = None
+
+        if os.path.exists(local_path):
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(local_path, 'r', encoding='utf-8') as f:
                     glacier_data = json.load(f)
-                    if glacier_data.get('features'):
-                        features.extend(glacier_data['features'])
             except Exception as e:
-                print(f"Error loading {file_path}: {e}", file=sys.stderr)
+                print(f"Error loading {local_path}: {e}", file=sys.stderr)
+        elif remote_url:
+            glacier_data = _load_json_from_url(remote_url)
+
+        if glacier_data and glacier_data.get('features'):
+            features.extend(glacier_data['features'])
     
     return jsonify({
         "type": "FeatureCollection",
@@ -251,12 +362,18 @@ def glacier_transition_data(glac_id):
     if not entry:
         return jsonify({"error": "Glacier not found"}), 404
 
-    file_path = os.path.join(os.path.dirname(__file__), "glacier_data", entry["path"])
-    if not os.path.exists(file_path):
-        return jsonify({"error": "Glacier data file missing"}), 404
+    local_path = os.path.join(os.path.dirname(__file__), "glacier_data", entry["path"])
+    remote_url = _remote_glacier_data_url(entry["path"])
+    data = None
 
-    with open(file_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    if os.path.exists(local_path):
+        with open(local_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    elif remote_url:
+        data = _load_json_from_url(remote_url)
+
+    if not data:
+        return jsonify({"error": "Glacier data file missing"}), 404
 
     years = set()
     for feature in data.get("features", []):
@@ -288,183 +405,126 @@ def _glacier_cache_dir(glacier_name):
     return os.path.join(CACHE_ROOT, safe)
 
 
-def _available_years_from_cache(glacier_name):
-    """List years that already exist on disk for a glacier."""
-    d = _glacier_cache_dir(glacier_name)
+def _available_remote_years_for_glacier(glacier_name):
+    if REMOTE_TIF_YEARS:
+        return _parse_years_list(REMOTE_TIF_YEARS)
+
     years = []
-    if os.path.isdir(d):
-        for f in os.listdir(d):
-            m = re.search(r"(\d{4})\.tif$", f)  # matches e.g. 2024.tif
-            if m and not f.endswith("_dem.tif"):  # skip DEM files
-                years.append(int(m.group(1)))
-    return sorted(years)
+    for year in range(1984, 2025):
+        remote_url = _remote_tiff_url(glacier_name, f"{year}.tif")
+        if remote_url and _remote_file_exists(remote_url):
+            years.append(year)
+    return years
 
 
-def _download_for_glacier(glacier_name):
-    """
-    Download Landsat RGB + SRTM DEM for a glacier using Earth Engine.
-    Runs synchronously — only called once per glacier.
-    """
-    import ee
-    import geemap
+def _available_years_from_cache(glacier_name, allow_remote=False):
+    """List available TIFF years from blob storage only."""
+    if allow_remote and BLOB_BASE_URL:
+        return _available_remote_years_for_glacier(glacier_name)
+    return []
 
-    ee_key = os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or os.getenv("EARTHENGINE_SERVICE_ACCOUNT_KEY_PATH")
-    if ee_key:
-        if not os.path.isabs(ee_key):
-            ee_key = os.path.join(os.path.dirname(__file__), ee_key)
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = ee_key
-        print(f"  → Using Earth Engine credentials from {ee_key}")
-        ee.Initialize(project='aidenglacierviewer')
-    else:
-        ee.Authenticate()
-        ee.Initialize(project='aidenglacierviewer')
 
-    bbox = KNOWN_GLACIERS[glacier_name]["bbox"]
-    aoi = ee.Geometry.BBox(*bbox)
-    out_dir = _glacier_cache_dir(glacier_name)
-    os.makedirs(out_dir, exist_ok=True)
-
-    # Download DEM once (SRTM 30m)
-    dem_path = os.path.join(out_dir, "dem.tif")
-    if not os.path.exists(dem_path):
-        print(f"  → Downloading DEM for {glacier_name}...")
-        dem = ee.Image("USGS/SRTMGL1_003").clip(aoi)
-        geemap.download_ee_image(image=dem, filename=dem_path, region=aoi, scale=30, crs="EPSG:4326")
-
-    # Download yearly Landsat composites (high-summer, low-cloud)
-    # Landsat 5 TM: 1984–2012, Landsat 7 ETM+: 1999–present (SLC-off after 2003),
-    # Landsat 8 OLI: 2013–present, Landsat 9 OLI-2: 2021–present
-    start_year = 1984
-    end_year = 2024
-
-    # Pre-compute Landsat 8/9 collection (2013+) — surface reflectance
-    l8 = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
-    l9 = ee.ImageCollection("LANDSAT/LC09/C02/T1_L2")
-
-    # Landsat 7 ETM+ collection (1999+)
-    l7 = ee.ImageCollection("LANDSAT/LE07/C02/T1_L2")
-
-    # Landsat 5 TM collection (1984–2012) — TOA reflectance
-    l5 = ee.ImageCollection("LANDSAT/LT05/C02/T1_L2")
-
-    for year in range(start_year, end_year + 1):
-        out_path = os.path.join(out_dir, f"{year}.tif")
-        if os.path.exists(out_path):
-            continue  # already cached
-        print(f"  → Downloading {glacier_name} {year}...")
-        start_date = f"{year}-07-01"
-        end_date = f"{year}-09-15"
-
-        col = None
-        bands = None
-        scale_factor = 0.0000275
-
-        if year >= 2021:
-            # Landsat 9 OLI-2
-            col = l9.filterBounds(aoi).filterDate(start_date, end_date).filter(ee.Filter.lt("CLOUD_COVER", 15))
-            bands = ["SR_B4", "SR_B3", "SR_B2"]
-        elif year >= 2013:
-            # Landsat 8 OLI
-            col = l8.filterBounds(aoi).filterDate(start_date, end_date).filter(ee.Filter.lt("CLOUD_COVER", 15))
-            bands = ["SR_B4", "SR_B3", "SR_B2"]
-        elif year >= 1999:
-            # Landsat 7 ETM+
-            col = l7.filterBounds(aoi).filterDate(start_date, end_date).filter(ee.Filter.lt("CLOUD_COVER", 15))
-            bands = ["SR_B3", "SR_B2", "SR_B1"]
-        else:
-            # Landsat 5 TM (1984–1998)
-            col = l5.filterBounds(aoi).filterDate(start_date, end_date).filter(ee.Filter.lt("CLOUD_COVER", 15))
-            bands = ["SR_B3", "SR_B2", "SR_B1"]
-
-        try:
-            count = col.size().getInfo()
-            if count == 0:
-                print(f"    ⚠ No images for {glacier_name} {year}")
-                continue
-            composite = col.median().clip(aoi)
-            visual = composite.select(bands).multiply(scale_factor)
-            geemap.download_ee_image(image=visual, filename=out_path, region=aoi, scale=30, crs="EPSG:4326")
-        except Exception as e:
-            print(f"    ⚠ Failed {glacier_name} {year}: {e}")
+# Deprecated: GeoTIFFs are now pre-generated and stored in Azure Blob Storage under tifcache/<glacier_name>/.
+# The local cache is only a fallback for any files already present on disk.
 
 
 @app.route("/api/glacier-image/years/<glacier_name>")
 def glacier_image_years(glacier_name):
-    """Return the list of years available for a glacier (cached + triggers download if empty)."""
+    """Return the list of years available for a glacier (cached + remote blob fallback)."""
     if glacier_name not in KNOWN_GLACIERS:
         return jsonify({"error": "Unknown glacier"}), 404
 
-    years = _available_years_from_cache(glacier_name)
-    return jsonify({"glacier": glacier_name, "years": years, "complete": len(years) >= 10})
+    years = _available_years_from_cache(glacier_name, allow_remote=True)
+    return jsonify({"glacier": glacier_name, "years": years, "complete": len(years) > 0})
 
 
 @app.route("/api/glacier-image/download/<glacier_name>", methods=["POST"])
 def glacier_image_download(glacier_name):
-    """Trigger a background download of all years for a glacier. Idempotent."""
+    """Deprecated: remote TIFFs are pre-generated in Azure Blob Storage."""
     if glacier_name not in KNOWN_GLACIERS:
         return jsonify({"error": "Unknown glacier"}), 404
-
-    with _download_lock:
-        if glacier_name in _download_locks:
-            return jsonify({"status": "already_running"})
-        _download_locks[glacier_name] = True
-
-    def _run():
-        try:
-            _download_for_glacier(glacier_name)
-        finally:
-            with _download_lock:
-                _download_locks.pop(glacier_name, None)
-
-    t = threading.Thread(target=_run, daemon=True)
-    t.start()
-    return jsonify({"status": "started"})
+    return jsonify({
+        "error": "Download not supported. Use blob-hosted TIFFs in tifcache/ instead.",
+        "glacier": glacier_name,
+    }), 400
 
 
 @app.route("/api/glacier-image/status/<glacier_name>")
 def glacier_image_status(glacier_name):
-    """Poll for download progress."""
+    """Deprecated: download status is no longer available."""
     if glacier_name not in KNOWN_GLACIERS:
         return jsonify({"error": "Unknown glacier"}), 404
-    with _download_lock:
-        running = glacier_name in _download_locks
-    years = _available_years_from_cache(glacier_name)
+    years = _available_years_from_cache(glacier_name, allow_remote=True)
     return jsonify({
         "glacier": glacier_name,
-        "downloading": running,
+        "downloading": False,
         "years_ready": years,
-        "complete": running is False and len(years) > 0,
+        "complete": len(years) > 0,
     })
 
 
 @app.route("/api/glacier-image/tile/<glacier_name>/<int:year>")
 def glacier_image_tile(glacier_name, year):
     """Return a single year's RGB + elevation as base64 PNG for the 3D viewer."""
-    import rasterio
     import numpy as np
+    import tifffile
     from PIL import Image
     import io, base64
 
     if glacier_name not in KNOWN_GLACIERS:
         return jsonify({"error": "Unknown glacier"}), 404
 
-    cache_dir = _glacier_cache_dir(glacier_name)
-    tif_path = os.path.join(cache_dir, f"{year}.tif")
-    dem_path = os.path.join(cache_dir, "dem.tif")
+    remote_tif_url = _remote_tiff_url(glacier_name, f"{year}.tif")
+    remote_dem_url = _remote_tiff_url(glacier_name, "dem.tif")
 
-    if not os.path.exists(tif_path):
-        return jsonify({"error": f"No cached image for {glacier_name} {year}"}), 404
+    def _open_remote_tiff(remote_url):
+        if not remote_url:
+            return None
+        data = _load_binary_from_url(remote_url)
+        if data is None:
+            return None
+        try:
+            arr = tifffile.imread(io.BytesIO(data))
+            arr = np.asarray(arr).astype(np.float32)
+            if arr.ndim == 3 and arr.shape[0] == 3:
+                # shape is (bands, height, width)
+                arr = np.transpose(arr, (1, 2, 0))
+            if arr.ndim == 3 and arr.shape[2] == 3:
+                return arr
+            if arr.ndim == 2:
+                return arr
+            if arr.ndim == 3 and arr.shape[2] == 4:
+                return arr[..., :3]
+            return arr
+        except Exception as e:
+            print(f"Error reading GeoTIFF from {remote_url}: {e}", file=sys.stderr)
+            return None
 
-    with rasterio.open(tif_path) as src:
-        r = src.read(1).astype(np.float32)
-        g = src.read(2).astype(np.float32)
-        b = src.read(3).astype(np.float32)
+    def _open_rgb_image(remote_url=None):
+        rgb = _open_remote_tiff(remote_url)
+        if rgb is None:
+            return None
+        if rgb.ndim == 3 and rgb.shape[2] >= 3:
+            return [rgb[..., 0], rgb[..., 1], rgb[..., 2]]
+        return None
 
-    has_dem = os.path.exists(dem_path)
-    if has_dem:
-        with rasterio.open(dem_path) as dem_src:
-            elevation = dem_src.read(1).astype(np.float32)
-            elevation = np.nan_to_num(elevation, nan=0)
+    def _open_dem(remote_url=None):
+        dem = _open_remote_tiff(remote_url)
+        if dem is None:
+            return None
+        if dem.ndim == 2:
+            return np.nan_to_num(dem, nan=0)
+        if dem.ndim == 3 and dem.shape[2] == 1:
+            return np.nan_to_num(dem[..., 0], nan=0)
+        return None
+
+    bands = _open_rgb_image(remote_tif_url)
+    if bands is None:
+        return jsonify({"error": f"No remote GeoTIFF image for {glacier_name} {year}"}), 404
+
+    r, g, b = bands
+    elevation = _open_dem(remote_dem_url)
+    has_dem = elevation is not None
 
     def _normalize(band):
         band = np.nan_to_num(band, nan=0)
@@ -520,7 +580,7 @@ def glacier_image_tile(glacier_name, year):
 @app.route("/api/geotiff/years")
 def geotiff_years():
     """Return available years (legacy — redirects to Mt Rainier cache)."""
-    years = _available_years_from_cache("Mt Rainier")
+    years = _available_years_from_cache("Mt Rainier", allow_remote=True)
     # Also check the old rainier_yearly_images folder
     old_dir = os.path.join(os.path.dirname(__file__), "rainier_yearly_images")
     if os.path.isdir(old_dir):

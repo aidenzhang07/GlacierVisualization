@@ -18,21 +18,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: true # If your repository uses Git LFS, set this to true to ensure large files are properly checked out.
-
-      - name: Create secrets directory and inject files
-        run: |
-          # 1. Create the secrets folder
-          mkdir -p secrets
-          
-          # 2. Write the Google Service Account JSON from GitHub Secrets
-          echo '${{ secrets.EARTH_ENGINE_KEY }}' > secrets/service-account-key.json
-          
-          # 3. Dynamically generate the .env file
-          echo "GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_PATH }}" > .env
-
-
 
       - name: Set up Python version
         uses: actions/setup-python@v5
