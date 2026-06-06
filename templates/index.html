@@ -365,6 +365,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.vectorgrid/dist/Leaflet.VectorGrid.bundled.js"></script>
 <script>
 const glacierMarkers = {{ glacier_markers | tojson }};
 let highlightedGlacierIds = new Set();
@@ -436,76 +437,56 @@ async function createMap() {
 
   L.control.scale({ position:'bottomleft', imperial:true, metric:true, maxWidth:180 }).addTo(map);
 
-  // GeoJSON glacier layer
-  const renderer = L.canvas({ padding:0.5 });
 
-  function shiftCoords(coords, dx) {
-    if (typeof coords[0]==='number') return [coords[0]+dx, coords[1]];
-    return coords.map(c => shiftCoords(c, dx));
-  }
-  function offsetFC(fc, dx) {
-    return { type:'FeatureCollection', features: fc.features.map(f => {
-      const c = JSON.parse(JSON.stringify(f));
-      c.geometry.coordinates = shiftCoords(c.geometry.coordinates, dx);
-      return c;
-    })};
-  }
+  const MBTILES_TILE_URL = {{ mbtiles_tile_url | tojson }};
 
-  function makeLayer(geojson, interactive=true) {
-    return L.geoJSON(geojson, {
-      renderer,
-      smoothFactor:10,
-      style(f) {
-        const id   = f.properties?.glac_id;
-        const ext  = f.properties?.gone_date;
-        const hi   = id && highlightedGlacierIds.has(id);
-        return {
-          color:       ext ? '#e05050' : hi ? '#c060e8' : '#2a6496',
-          fillColor:   ext ? 'rgba(224,80,80,0.18)' : hi ? 'rgba(192,96,232,0.22)' : 'rgba(42,100,150,0.18)',
-          weight:      (hi||ext) ? 2.5 : 1.5,
-          fillOpacity: (hi||ext) ? 0.6 : 0.35,
-        };
-      },
-      onEachFeature(f, layer) {
-        if (!interactive) return;
-        const name  = f.properties?.glac_name || '';
-        const id    = f.properties?.glac_id || '';
-        const area  = f.properties?.area || '';
-        const date  = (f.properties?.src_date||'').split('T')[0].replace(/-/g,'/');
-        let p = name ? `<strong>${name}</strong>` : `<strong>Glacier</strong>`;
-        p += `<div style="margin-top:8px;font-size:12px;line-height:1.7;color:#7aafc5">`;
-        if (id)   p += `<div>ID: <code style="color:#4a9eca;font-size:11px">${id}</code></div>`;
-        if (area) p += `<div>Area: ${area} km²</div>`;
-        if (date) p += `<div>Last obs: ${date}</div>`;
-        p += `</div>`;
-        const links = [];
-        if (name && glacierMarkers[name])
-          links.push(`<a href="#" onclick="open3DModal('${name.replace(/'/g,"\\'")}');return false">🏔 3D View</a>`);
-        if (id && highlightedGlacierIds.has(id))
-          links.push(`<a href="/glacier-transition/${encodeURIComponent(id)}" target="_blank">📅 Transition</a>`);
-        if (links.length)
-          p += `<div style="margin-top:10px;display:flex;gap:14px;font-size:12px">${links.join('')}</div>`;
-        layer.bindPopup(p);
-      }
-    });
+  function makeVectorStyle(properties) {
+    const id  = properties?.glac_id;
+    const ext = properties?.gone_date;
+    const hi  = id && highlightedGlacierIds.has(id);
+    return {
+      color:       ext ? '#e05050' : hi ? '#c060e8' : '#2a6496',
+      fillColor:   ext ? 'rgba(224,80,80,0.18)' : hi ? 'rgba(192,96,232,0.22)' : 'rgba(42,100,150,0.18)',
+      weight:      (hi || ext) ? 2.5 : 1.5,
+      fillOpacity: (hi || ext) ? 0.6 : 0.35,
+      fill: true,
+    };
   }
 
-  const GEOJSON_URL = {{ geojson_url | tojson }};
+  const vectorLayer = L.vectorGrid.protobuf(MBTILES_TILE_URL, {
+    rendererFactory: L.canvas.tile,
+    vectorTileLayerStyles: {
+      // style callback receives feature properties; layer name may vary —
+      'a': properties => makeVectorStyle(properties),
+    },
+    interactive: true,
+    getFeatureId: f => f.properties?.glac_id || Math.random(),
+    maxZoom: 18,
+  });
 
-  async function loadGeoJSON() {
-    try {
-      const r = await fetch(GEOJSON_URL);
-      if (!r.ok) throw new Error(r.status);
-      const g = await r.json();
-      L.layerGroup([
-        makeLayer(offsetFC(g,-360), false),
-        makeLayer(g, true),
-        makeLayer(offsetFC(g, 360), false),
-      ]).addTo(map);
-    } catch(e) { console.error('GeoJSON load failed:', e); }
-  }
+  vectorLayer.on('click', function (e) {
+    const f = e.layer.properties || {};
+    const name  = f.glac_name || '';
+    const id    = f.glac_id   || '';
+    const area  = f.area      || '';
+    const date  = (f.src_date || '').split('T')[0].replace(/-/g, '/');
+    let p = name ? `<strong>${name}</strong>` : `<strong>Glacier</strong>`;
+    p += `<div style="margin-top:8px;font-size:12px;line-height:1.7;color:#7aafc5">`;
+    if (id)   p += `<div>ID: <code style="color:#4a9eca;font-size:11px">${id}</code></div>`;
+    if (area) p += `<div>Area: ${area} km²</div>`;
+    if (date) p += `<div>Last obs: ${date}</div>`;
+    p += `</div>`;
+    const links = [];
+    if (name && glacierMarkers[name])
+      links.push(`<a href="#" onclick="open3DModal('${name.replace(/'/g, "\\'")}');return false">🏔 3D View</a>`);
+    if (id && highlightedGlacierIds.has(id))
+      links.push(`<a href="/glacier-transition/${encodeURIComponent(id)}" target="_blank">📅 Transition</a>`);
+    if (links.length)
+      p += `<div style="margin-top:10px;display:flex;gap:14px;font-size:12px">${links.join('')}</div>`;
+    L.popup().setLatLng(e.latlng).setContent(p).openOn(map);
+  });
 
-  loadGeoJSON();
+  vectorLayer.addTo(map);
   window._leafletMap = map;
 
   // Named markers

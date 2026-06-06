@@ -22,8 +22,8 @@ BLOB_BASE_URL = os.getenv("AZURE_BLOB_BASE_URL", "https://glacierdata.blob.core.
 GLACIER_MANIFEST_URL = os.getenv("GLACIER_MANIFEST_URL") or (
     f"{BLOB_BASE_URL}/glacier_data/manifest.json" if BLOB_BASE_URL else None
 )
-A_GEOJSON_URL = os.getenv("A_GEOJSON_URL") or (
-    f"{BLOB_BASE_URL}/static/a.geojson" if BLOB_BASE_URL else None
+MBTILES_URL = os.getenv("MBTILES_URL") or (
+    f"{BLOB_BASE_URL}/static/glacier.mbtiles" if BLOB_BASE_URL else None
 )
 REMOTE_TIF_YEARS = os.getenv("REMOTE_TIF_YEARS")
 
@@ -251,7 +251,77 @@ def index():
     return render_template(
         "index.html",
         glacier_markers=KNOWN_GLACIERS,
-        geojson_url=A_GEOJSON_URL or "/static/a.geojson",
+        mbtiles_tile_url="/api/tiles/{z}/{x}/{y}.pbf",
+    )
+
+
+# ── MBTiles tile proxy ────────────────────────────────────────────────────────
+_mbtiles_conn = None
+
+
+def _get_mbtiles_conn():
+    """Return a sqlite3 connection to the MBTiles file.
+
+    Strategy:
+      1. Check for a local static/glacier.mbtiles file first.
+      2. Otherwise fetch from blob storage into a temp file and open it.
+    """
+    global _mbtiles_conn
+    if _mbtiles_conn is not None:
+        return _mbtiles_conn
+
+    local_path = os.path.join(os.path.dirname(__file__), "static", "glacier.mbtiles")
+    if os.path.exists(local_path):
+        _mbtiles_conn = sqlite3.connect(local_path, check_same_thread=False)
+        return _mbtiles_conn
+
+    if MBTILES_URL:
+        import tempfile
+        print(f"Fetching MBTiles from {MBTILES_URL} ...", file=sys.stderr)
+        data = _load_binary_from_url(MBTILES_URL)
+        if data:
+            tmp = tempfile.NamedTemporaryFile(suffix=".mbtiles", delete=False)
+            tmp.write(data)
+            tmp.flush()
+            tmp.close()
+            _mbtiles_conn = sqlite3.connect(tmp.name, check_same_thread=False)
+            return _mbtiles_conn
+
+    return None
+
+
+@app.route("/api/tiles/<int:z>/<int:x>/<int:y>.pbf")
+def mbtiles_tile(z, x, y):
+    """Serve a single vector tile from the MBTiles file."""
+    from flask import Response
+    conn = _get_mbtiles_conn()
+    if conn is None:
+        abort(503)
+
+    # MBTiles uses TMS y-axis (flipped vs XYZ)
+    tms_y = (1 << z) - 1 - y
+
+    try:
+        row = conn.execute(
+            "SELECT tile_data FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=?",
+            (z, x, tms_y),
+        ).fetchone()
+    except sqlite3.Error as e:
+        print(f"MBTiles query error: {e}", file=sys.stderr)
+        abort(500)
+
+    if row is None:
+        abort(404)
+
+    return Response(
+        row[0],
+        status=200,
+        headers={
+            "Content-Type": "application/x-protobuf",
+            "Content-Encoding": "gzip",
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=86400",
+        },
     )
 
 
