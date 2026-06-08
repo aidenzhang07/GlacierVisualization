@@ -504,6 +504,13 @@ async function createMap() {
   });
 }
 
+// Compatibility shim: Leaflet 1.9+ removed fakeStop; VectorGrid still needs it.
+if (!L.DomEvent.fakeStop) {
+  L.DomEvent.fakeStop = function(e) {
+    L.DomEvent.stop(e);
+    return false;
+  };
+}
 createMap();
 </script>
 <!-- ── INFO SIDEBAR TAB ── -->
